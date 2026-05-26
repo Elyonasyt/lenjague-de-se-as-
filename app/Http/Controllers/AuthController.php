@@ -3,58 +3,81 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Session;
 
 class AuthController extends Controller
 {
-    // 🧩 REGISTRO DE USUARIO
+
+    // ==============================
+    // REGISTRO
+    // ==============================
     public function register(Request $request)
     {
+
         $request->validate([
-            'nombre' => 'required|string|max:100',
-            'correo' => 'required|email|unique:usuarios,correo',
-            'contrasena' => 'required|min:6|confirmed',
+            'first_name' => 'required|string|max:100',
+            'last_name' => 'required|string|max:100',
+            'middle_name' => 'required|string|max:100',
+            'email' => 'required|email|unique:users,email',
+            'password' => 'required|min:6|confirmed'
         ]);
 
-        DB::table('usuarios')->insert([
-            'nombre' => $request->nombre,
-            'correo' => $request->correo,
-            'contrasena' => Hash::make($request->contrasena),
-            'fecha_registro' => now(),
+        DB::table('users')->insert([
+            'first_name' => $request->first_name,
+            'last_name' => $request->last_name,
+            'middle_name' => $request->middle_name,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+            'registration_date' => now()
         ]);
 
-        return redirect('/inicio')->with('success', 'Registro exitoso. Inicia sesión.');
+        return redirect('/inicio')->with('success','Registro exitoso. Inicia sesión.');
     }
 
-    // 🧩 INICIO DE SESIÓN
+
+    // ==============================
+    // LOGIN
+    // ==============================
     public function login(Request $request)
     {
+
         $request->validate([
-            'correo' => 'required|email',
-            'contrasena' => 'required',
+            'email' => 'required|email',
+            'password' => 'required'
         ]);
 
-        $usuario = DB::table('usuarios')->where('correo', $request->correo)->first();
+        $usuario = DB::table('users')
+            ->where('email',$request->email)
+            ->first();
 
-        if ($usuario && Hash::check($request->contrasena, $usuario->contrasena)) {
-            // Guardar datos en sesión manualmente
-            Session::put('usuario_id', $usuario->id);
-            Session::put('usuario_nombre', $usuario->nombre);
+        if($usuario && Hash::check($request->password,$usuario->Passwor)){
+
+            Session::put('usuario_id',$usuario->id_user);
+            Session::put('usuario_nombre',$usuario->first_name);
 
             return redirect('/traductor');
+
         }
 
-        return back()->withErrors(['correo' => 'Correo o contraseña incorrectos.']);
+        return back()->withErrors([
+            'credenciales' => 'Correo o contraseña incorrectos'
+        ]);
+
     }
 
-    // 🧩 CIERRE DE SESIÓN
+
+    // ==============================
+    // LOGOUT
+    // ==============================
     public function logout()
     {
-        Session::flush();
-        return redirect('/inicio')->with('success', 'Sesión cerrada correctamente.');
-    }
-}
 
+        Session::flush();
+
+        return redirect('/inicio')->with('success','Sesión cerrada correctamente');
+
+    }
+
+}

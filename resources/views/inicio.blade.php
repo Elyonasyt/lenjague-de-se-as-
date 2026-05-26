@@ -1,79 +1,434 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Inicio de Sesión - Lenguaje de Señas</title>
-    <style>
-        * { margin:0; padding:0; box-sizing:border-box; font-family:'Poppins', sans-serif; }
-        body {
-            height:100vh;
-            display:flex;
-            justify-content:center;
-            align-items:center;
-            background:radial-gradient(circle at top left, #00eaff, #0044ff 70%);
-            position:relative;
-            overflow:hidden;
-        }
 
-        .fondo{position:absolute;width:100%;height:100%;overflow:hidden;z-index:0;}
-        .burbuja{position:absolute;bottom:-100px;background:rgba(255,255,255,0.2);border-radius:50%;animation:subir 10s infinite ease-in;}
-        @keyframes subir{from{transform:translateY(0) scale(1);opacity:1;} to{transform:translateY(-110vh) scale(1.3);opacity:0;}}
+<meta charset="UTF-8">
 
-        .contenedor{
-            position:relative;z-index:2;width:380px;padding:50px 40px;border-radius:25px;
-            background:rgba(255,255,255,0.1);backdrop-filter:blur(25px);
-            box-shadow:0 0 40px rgba(0,200,255,0.5), inset 0 0 20px rgba(255,255,255,0.2);
-            text-align:center;color:white;animation:flotar 3s ease-in-out infinite;
-        }
-        @keyframes flotar{0%,100%{transform:translateY(0);}50%{transform:translateY(-10px);}}
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-        .icon{font-size:90px;margin-bottom:15px;filter:drop-shadow(0 0 10px #00eaff);animation:brillo 3s infinite alternate;}
-        @keyframes brillo{from{filter:drop-shadow(0 0 5px #00eaff);}to{filter:drop-shadow(0 0 20px #00ffff);}}
+<title>Iniciar Sesión | Traductor LSM</title>
 
-        h2{margin-bottom:20px;letter-spacing:2px;font-weight:600;text-shadow:0 0 10px rgba(0,238,255,0.8);}
-        input{width:90%;padding:12px;margin:10px 0;border:none;border-radius:10px;outline:none;background:rgba(255,255,255,0.95);font-size:15px;text-align:center;transition:0.3s;}
-        input:focus{transform:scale(1.05);box-shadow:0 0 10px #00eaff;}
-        button{display:inline-block;width:90%;padding:14px;margin-top:15px;border:none;border-radius:12px;background:linear-gradient(90deg,#00c3ff,#0066ff);color:white;font-weight:bold;font-size:16px;cursor:pointer;transition:all 0.3s ease;box-shadow:0 0 20px rgba(0,153,255,0.6);}
-        button:hover{background:linear-gradient(90deg,#00ffcc,#007bff);transform:scale(1.08);box-shadow:0 0 30px rgba(0,255,255,0.9);}
-        a{display:block;margin-top:20px;color:#e0f7ff;text-decoration:none;font-size:14px;transition:0.2s;}
-        a:hover{text-shadow:0 0 10px #00eaff;color:#fff;}
-        .luz{position:absolute;width:150px;height:150px;background:radial-gradient(circle, rgba(0,255,255,0.4), transparent);border-radius:50%;animation:moverLuz 6s infinite alternate;}
-        .luz:nth-child(1){top:10%;left:10%;animation-delay:0s;}
-        .luz:nth-child(2){bottom:10%;right:15%;animation-delay:3s;}
-        @keyframes moverLuz{0%{transform:translate(0,0);}100%{transform:translate(40px,-40px);}}
-        .error{color:#ff4d4d;font-size:14px;margin-top:5px;text-align:left;}
-    </style>
+<style>
+
+/* =========================
+   GENERAL
+========================= */
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:'Poppins',sans-serif;
+}
+
+body{
+
+    height:100vh;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    overflow:hidden;
+
+    background:
+    linear-gradient(
+        135deg,
+        #c8fff4,
+        #9bf6ff,
+        #72efdd,
+        #64dfdf,
+        #56cfe1
+    );
+
+    position:relative;
+}
+
+/* =========================
+   EFECTOS FONDO
+========================= */
+
+body::before{
+
+    content:"";
+
+    position:absolute;
+
+    width:650px;
+    height:650px;
+
+    background:white;
+
+    border-radius:50%;
+
+    top:-250px;
+    left:-250px;
+
+    opacity:0.25;
+
+    filter:blur(130px);
+}
+
+body::after{
+
+    content:"";
+
+    position:absolute;
+
+    width:600px;
+    height:600px;
+
+    background:#7bffef;
+
+    border-radius:50%;
+
+    bottom:-250px;
+    right:-250px;
+
+    opacity:0.30;
+
+    filter:blur(130px);
+}
+
+/* =========================
+   LOGIN CONTAINER
+========================= */
+
+.login-container{
+
+    position:relative;
+
+    width:900px;
+
+    background:
+    rgba(255,255,255,0.35);
+
+    backdrop-filter:blur(25px);
+
+    padding:90px 80px;
+
+    border-radius:40px;
+
+    border:
+    3px solid rgba(255,255,255,0.5);
+
+    box-shadow:
+    0 25px 60px rgba(0,0,0,0.18);
+
+    z-index:10;
+}
+
+/* =========================
+   LOGO
+========================= */
+
+.logo{
+
+    text-align:center;
+
+    margin-bottom:55px;
+}
+
+.logo span{
+
+    font-size:120px;
+
+    display:block;
+
+    margin-bottom:20px;
+}
+
+.logo h1{
+
+    font-size:50px;
+
+    color:#000;
+
+    font-weight:800;
+
+    text-shadow:
+    0 0 10px rgba(0,0,0,0.15);
+}
+
+/* =========================
+   TITULO
+========================= */
+
+h2{
+
+    text-align:center;
+
+    margin-bottom:50px;
+
+    color:#000;
+
+    font-weight:700;
+
+    font-size:42px;
+}
+
+/* =========================
+   FORMULARIO
+========================= */
+
+.form-group{
+
+    margin-bottom:35px;
+}
+
+label{
+
+    display:block;
+
+    font-size:24px;
+
+    margin-bottom:14px;
+
+    color:#000;
+
+    font-weight:600;
+}
+
+input{
+
+    width:100%;
+
+    padding:24px;
+
+    border:
+    2px solid rgba(0,0,0,0.15);
+
+    border-radius:20px;
+
+    font-size:24px;
+
+    background:
+    rgba(255,255,255,0.95);
+
+    color:#000;
+
+    transition:0.3s;
+}
+
+input:focus{
+
+    border-color:#000;
+
+    outline:none;
+
+    box-shadow:
+    0 0 0 6px rgba(0,0,0,0.10);
+}
+
+/* =========================
+   BOTON NEGRO
+========================= */
+
+.btn-login{
+
+    width:100%;
+
+    margin-top:20px;
+
+    padding:22px;
+
+    border:none;
+
+    border-radius:22px;
+
+    background:#000;
+
+    color:white;
+
+    font-size:28px;
+
+    font-weight:bold;
+
+    cursor:pointer;
+
+    transition:0.35s;
+
+    box-shadow:
+    0 10px 25px rgba(0,0,0,0.35);
+}
+
+.btn-login:hover{
+
+    transform:
+    translateY(-4px)
+    scale(1.02);
+
+    background:#222;
+}
+
+/* =========================
+   LINK REGISTRO
+========================= */
+
+.register-link{
+
+    text-align:center;
+
+    margin-top:40px;
+
+    font-size:24px;
+
+    color:#000;
+}
+
+.register-link a{
+
+    color:#000;
+
+    text-decoration:none;
+
+    font-weight:bold;
+}
+
+.register-link a:hover{
+
+    text-decoration:underline;
+}
+
+/* =========================
+   ERROR
+========================= */
+
+.error{
+
+    color:#dc2626;
+
+    font-size:18px;
+
+    margin-top:10px;
+}
+
+.alert{
+
+    background:
+    rgba(255,0,0,0.10);
+
+    color:#991b1b;
+
+    padding:18px;
+
+    border-radius:15px;
+
+    margin-bottom:30px;
+
+    text-align:center;
+
+    font-size:20px;
+}
+
+/* =========================
+   RESPONSIVE
+========================= */
+
+@media(max-width:768px){
+
+    .login-container{
+
+        width:95%;
+
+        padding:50px 30px;
+    }
+
+    .logo span{
+
+        font-size:80px;
+    }
+
+    .logo h1{
+
+        font-size:32px;
+    }
+
+    h2{
+
+        font-size:30px;
+    }
+
+    label{
+
+        font-size:20px;
+    }
+
+    input{
+
+        font-size:20px;
+
+        padding:18px;
+    }
+
+    .btn-login{
+
+        font-size:22px;
+    }
+
+    .register-link{
+
+        font-size:18px;
+    }
+}
+
+</style>
+
 </head>
+
 <body>
-
-<div class="fondo">
-    <div class="burbuja" style="width:80px;height:80px;left:10%;animation-delay:0s;"></div>
-    <div class="burbuja" style="width:50px;height:50px;left:25%;animation-delay:2s;"></div>
-    <div class="burbuja" style="width:100px;height:100px;left:40%;animation-delay:4s;"></div>
-    <div class="burbuja" style="width:60px;height:60px;left:60%;animation-delay:1s;"></div>
-    <div class="burbuja" style="width:90px;height:90px;left:75%;animation-delay:3s;"></div>
-</div>
-
-<div class="luz"></div>
-<div class="luz"></div>
-
-<div class="contenedor">
-    <div class="icon">🤟</div>
-    <h2>Iniciar Sesión</h2>
+<div class="login-container">
+    <div class="logo">
+        <span>🤟</span>
+        <h1> Traductor Lenguaje de Señas </h1>
+    </div>
+    <h2>    Iniciar Sesión</h2>
+    @if ($errors->any())
+        <div class="alert"> {{ $errors->first() }} </div>
+    @endif
     <form action="{{ route('login.autenticar') }}" method="POST">
         @csrf
-        <input type="email" name="correo" placeholder="Correo electrónico" required>
-        <input type="password" name="contrasena" placeholder="Contraseña" required>
-        <button type="submit">Entrar</button>
-
-        @if ($errors->has('credenciales'))
-            <p class="error">{{ $errors->first('credenciales') }}</p>
-        @endif
+        <div class="form-group">
+            <label for="email"> Correo electrónico</label>
+            <input
+                type="email"
+                id="email"
+                name="email"
+                value="{{ old('email') }}"
+                autocomplete="email"
+                required>
+            @error('email')
+                <div class="error">
+                    {{ $message }}
+                </div>
+            @enderror
+        </div>
+        <div class="form-group">
+            <label for="password">  Contraseña</label>
+            <input
+                type="password"
+                id="password"
+                name="password"
+                autocomplete="current-password"
+                required>
+            @error('password')
+               <div class="error"> {{ $message }}
+                </div>
+            @enderror
+        </div>
+        <button type="submit" class="btn-login"> 🚀 Ingresar </button>
     </form>
-
-    <a href="/registro">¿No tienes cuenta? Regístrate</a>
+    <div class="register-link">
+        ¿No tienes cuenta?
+        <a href="{{ route('registro.form') }}">
+            Regístrate aquí
+        </a>
+    </div>
 </div>
 
 </body>
+
 </html>

@@ -3,23 +3,25 @@
 namespace App\Models;
 
 use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
 
 class Usuario extends Authenticatable
 {
-    use Notifiable;
+    protected $table = 'users';
 
-    protected $table = 'usuarios';
+    protected $primaryKey = 'id_user';
+
+    public $timestamps = false;
 
     protected $fillable = [
-        'nombre',
-        'correo',
-        'contrasena',
+        'first_name',
+        'last_name',
+        'middle_name',
+        'email',
+        'password',
+        'registration_date'
     ];
 
     protected $hidden = [
-        'contrasena',
+        'password'
     ];
-
-    public $timestamps = false;
 }

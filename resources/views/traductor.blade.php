@@ -1,185 +1,457 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Traductor - Lenguaje de Señas</title>
+    <title>Traductor de Lenguaje de Señas Mexicanas</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+
     <style>
-        * { margin:0; padding:0; box-sizing:border-box; font-family: 'Poppins', sans-serif; }
-        body {
-            height:100vh; display:flex; justify-content:center; align-items:center;
-            background: radial-gradient(circle at top left, #00ff99, #009966 80%);
-            position: relative; color: white; overflow: hidden;
-        }
-        .fondo { position:absolute; width:100%; height:100%; overflow:hidden; z-index:0; }
-        .burbuja { position:absolute; bottom:-100px; background: rgba(255,255,255,0.2); border-radius:50%; animation: subir 10s infinite ease-in; }
-        @keyframes subir { from { transform: translateY(0) scale(1); opacity:1;} to { transform: translateY(-110vh) scale(1.3); opacity:0; } }
 
-        .contenedor {
-            position: relative; z-index:2; width:850px; padding:30px; border-radius:25px;
-            background: rgba(255,255,255,0.1); backdrop-filter: blur(25px);
-            box-shadow: 0 0 40px rgba(0,200,100,0.5), inset 0 0 20px rgba(255,255,255,0.2);
-            display: flex; gap:20px;
+        /* =========================
+           GENERAL
+        ========================= */
+
+        *{
+            margin:0;
+            padding:0;
+            box-sizing:border-box;
+            font-family:'Poppins',sans-serif;
         }
 
-        .icon { font-size:90px; margin-bottom:15px; filter: drop-shadow(0 0 10px #00ff99); animation: brillo 3s infinite alternate; }
-        @keyframes brillo { from { filter: drop-shadow(0 0 5px #00ff99); } to { filter: drop-shadow(0 0 20px #00ff00); } }
-
-        h2 { margin-bottom:20px; letter-spacing:1.5px; font-weight:600; text-shadow:0 0 10px rgba(0,255,150,0.8); }
-
-        textarea { width:100%; height:120px; padding:12px; border-radius:15px; border:none; resize:none;
-            font-size:16px; text-align:center; outline:none; background: rgba(255,255,255,0.95); transition:0.3s; }
-        textarea:focus { transform: scale(1.03); box-shadow:0 0 15px #00ff99; }
-
-        button {
-            width:100%; padding:14px; margin-top:15px; border:none; border-radius:12px;
-            background: linear-gradient(90deg, #00ff99, #009966); color:black; font-weight:bold; font-size:16px;
-            cursor:pointer; transition: all 0.3s ease; box-shadow:0 0 20px rgba(0,255,150,0.6);
+        body{
+            min-height:100vh;
+            background:linear-gradient(135deg,#c8fff4,#9bf6ff,#72efdd,#64dfdf,#56cfe1);
+            color:#023047;
+            overflow-x:hidden;
         }
-        button:hover { background: linear-gradient(90deg,#00ff66,#00cc33); transform: scale(1.08); box-shadow:0 0 30px rgba(0,255,150,0.9); }
 
-        .historial { flex:1; max-height:350px; overflow-y:auto; background: rgba(0,0,0,0.3); padding:10px; border-radius:12px; }
-        .historial h3 { margin-bottom:10px; font-size:18px; color:#00ff99; text-align:center; }
-        .historial ul { list-style:none; }
-        .historial li { padding:5px 0; border-bottom:1px solid rgba(0,255,150,0.3); }
+        /* =========================
+           NAVBAR
+        ========================= */
 
-        #logout-btn { position: fixed; bottom:20px; left:20px; padding:5px 10px; font-size:11px;
-            border:none; border-radius:5px; font-weight:bold; cursor:pointer; box-shadow:0 0 6px rgba(255,153,51,0.7);
-            background:#ff4444; color:white; z-index:100; transition: all 0.3s ease; }
-        #logout-btn:hover { background:#ff7777; transform: scale(1.1); box-shadow:0 0 10px rgba(255,100,100,0.9); }
+        .navbar{
+            width:100%;
+            height:95px;
+            background:linear-gradient(90deg,#48cae4,#64dfdf,#72efdd);
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            padding:0 40px;
+            box-shadow:0 4px 15px rgba(0,0,0,0.1);
+        }
 
-        .imagen-traduccion { margin-top:20px; text-align:center; }
-        .imagen-traduccion img { width:150px; height:150px; border-radius:15px; box-shadow:0 0 10px #00ff99; }
+        /* LOGO */
 
-        #video-container { margin-top:20px; text-align:center; display:none; }
-        video { border-radius:15px; box-shadow:0 0 15px #00ff99; width:400px; height:300px; }
-        #resultado { margin-top:10px; font-size:1.2em; font-weight:bold; color:#fff; }
+        .logo{
+            display:flex;
+            align-items:center;
+            gap:15px;
+        }
+
+        .logo-icon{
+            font-size:40px;
+        }
+
+        .logo h1{
+            font-size:28px;
+            color:#000;
+        }
+
+        /* =========================
+           PERFIL USUARIO
+        ========================= */
+
+        .user-container{
+            display:flex;
+            align-items:center;
+            gap:15px;
+        }
+
+        .perfil-card{
+            display:flex;
+            align-items:center;
+            gap:12px;
+            background:#111;
+            padding:10px 20px;
+            border-radius:50px;
+            box-shadow:0 6px 15px rgba(0,0,0,0.15);
+        }
+
+        .perfil-icono{
+            width:50px;
+            height:50px;
+            border-radius:50%;
+            background:linear-gradient(135deg,#64dfdf,#48cae4);
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            font-size:24px;
+            color:#fff;
+        }
+
+        .perfil-info{
+            display:flex;
+            flex-direction:column;
+        }
+
+        .perfil-info strong{
+            color:#fff;
+            font-size:15px;
+            font-weight:600;
+        }
+
+        .perfil-info small{
+            color:#ccc;
+            font-size:11px;
+        }
+
+        /* BOTON CERRAR SESION */
+
+        .logout-btn{
+            background:#ff4d4d;
+            color:#fff;
+            padding:12px 18px;
+            border-radius:15px;
+            text-decoration:none;
+            font-weight:600;
+            transition:0.3s;
+            box-shadow:0 4px 10px rgba(0,0,0,0.15);
+        }
+
+        .logout-btn:hover{
+            background:#d90429;
+            transform:translateY(-2px);
+        }
+
+        /* =========================
+           LAYOUT
+        ========================= */
+
+        .layout{
+            display:flex;
+            gap:35px;
+            padding:40px;
+            max-width:1600px;
+            margin:0 auto;
+        }
+
+        /* =========================
+           HISTORIAL
+        ========================= */
+
+        .historial{
+            width:330px;
+            background:rgba(255,255,255,0.45);
+            border:2px solid rgba(255,255,255,0.5);
+            backdrop-filter:blur(15px);
+            border-radius:30px;
+            padding:25px;
+            max-height:730px;
+            overflow-y:auto;
+        }
+
+        .historial h3{
+            text-align:center;
+            font-size:24px;
+            margin-bottom:20px;
+            color:#0077b6;
+        }
+
+        .mensaje{
+            background:rgba(255,255,255,0.55);
+            border-radius:18px;
+            padding:12px;
+            margin-bottom:12px;
+            transition:0.2s;
+        }
+
+        .mensaje:hover{
+            transform:scale(1.02);
+        }
+
+        .mensaje a{
+            text-decoration:none;
+            color:#0096c7;
+            font-weight:bold;
+            display:block;
+        }
+
+        /* =========================
+           TRADUCTOR
+        ========================= */
+
+        .traductor{
+            flex:1;
+            background:rgba(255,255,255,0.42);
+            border:2px solid rgba(255,255,255,0.5);
+            backdrop-filter:blur(15px);
+            border-radius:35px;
+            padding:45px;
+            text-align:center;
+        }
+
+        .traductor h2{
+            font-size:32px;
+            color:#0096c7;
+            margin-bottom:25px;
+        }
+
+        textarea{
+            width:100%;
+            height:180px;
+            border:2px solid #90e0ef;
+            outline:none;
+            resize:none;
+            border-radius:24px;
+            padding:20px;
+            font-size:18px;
+            background:rgba(255,255,255,0.8);
+        }
+
+        .btn-primary{
+            margin-top:25px;
+            padding:15px 60px;
+            border:none;
+            border-radius:20px;
+            background:#000;
+            color:#fff;
+            font-size:18px;
+            font-weight:600;
+            cursor:pointer;
+            transition:0.3s;
+        }
+
+        .btn-primary:hover{
+            background:#333;
+        }
+
+        /* =========================
+           RESULTADOS
+        ========================= */
+
+        .imagen-traduccion{
+            margin-top:40px;
+        }
+
+        .imagen-traduccion h3{
+            font-size:28px;
+            color:#0077b6;
+            margin-bottom:20px;
+        }
+
+        .contenedor-resultado{
+            display:flex;
+            flex-wrap:wrap;
+            justify-content:center;
+            gap:20px;
+        }
+
+        .resultado-card{
+            background:rgba(255,255,255,0.7);
+            padding:20px;
+            border-radius:25px;
+            width:180px;
+            box-shadow:0 8px 20px rgba(0,0,0,0.05);
+            text-align:center;
+        }
+
+        .resultado-card img{
+            width:140px;
+            height:140px;
+            object-fit:contain;
+            border-radius:15px;
+            background:#fff;
+            padding:10px;
+        }
+
     </style>
+
 </head>
+
 <body>
 
-<!-- BOTÓN CERRAR SESIÓN -->
-<button id="logout-btn" onclick="location.href='{{ url('/') }}'">Cerrar Sesión</button>
+    <!-- =========================
+         NAVBAR
+    ========================= -->
 
-<!-- FONDO CON BURBUJAS -->
-<div class="fondo">
-    <div class="burbuja" style="width:80px; height:80px; left:10%; animation-delay:0s;"></div>
-    <div class="burbuja" style="width:50px; height:50px; left:25%; animation-delay:2s;"></div>
-    <div class="burbuja" style="width:100px; height:100px; left:40%; animation-delay:4s;"></div>
-    <div class="burbuja" style="width:60px; height:60px; left:60%; animation-delay:1s;"></div>
-    <div class="burbuja" style="width:90px; height:90px; left:75%; animation-delay:3s;"></div>
-</div>
+    <div class="navbar">
 
-<!-- CONTENEDOR PRINCIPAL -->
-<div class="contenedor">
+        <div class="logo">
 
-    <!-- HISTORIAL IZQUIERDA -->
-    <div class="historial">
-        <h3>Historial</h3>
-        <ul id="listaHistorial">
-            @if(isset($palabra))
-                <li>{{ $palabra }}</li>
-            @endif
-        </ul>
-    </div>
+            <div class="logo-icon">
+                🤟
+            </div>
 
-    <!-- INPUT Y BOTÓN DERECHA -->
-    <div style="flex: 1; display:flex; flex-direction: column; align-items:center;">
-        <div class="icon">👋</div>
-        <h2>Traductor de Palabras a Lenguaje de Señas</h2>
+            <h1>
+                Traductor de Lenguaje de Señas
+            </h1>
 
-        <form action="{{ route('traductor.traducir') }}" method="POST">
-            @csrf
-            <textarea name="palabra" placeholder="Escribe una palabra..."></textarea><br>
-            <button type="submit">Traducir</button>
-        </form>
-
-        @isset($imagen)
-            <h3>Traducción para: "{{ $palabra }}"</h3>
-            <img src="{{ $imagen }}" alt="Seña de {{ $palabra }}">
-        @endisset
-
-        <!-- BOTÓN PARA CÁMARA -->
-        <button id="btnCamara" onclick="toggleCamara()">📷 Activar Cámara</button>
-
-        <!-- VIDEO -->
-        <div id="video-container">
-            <video id="video" autoplay playsinline></video>
-            <div id="resultado">Esperando detección...</div>
         </div>
 
-        @if(isset($imagen))
-            <div class="imagen-traduccion">
-                <h3>Traducción:</h3>
-                <img src="{{ $imagen }}" alt="{{ $palabra }}">
+        @if(isset($usuario))
+
+        <div class="user-container">
+
+            <!-- PERFIL -->
+
+            <div class="perfil-card">
+
+                <div class="perfil-icono">
+                    👤
+                </div>
+
+                <div class="perfil-info">
+
+                    <strong>
+                        {{ $usuario->first_name }}
+                        {{ $usuario->last_name }}
+                    </strong>
+
+                    <small>
+                        {{ $usuario->email }}
+                    </small>
+
+                </div>
+
             </div>
+
+            <!-- CERRAR SESION -->
+
+            <a href="{{ route('logout') }}" class="logout-btn">
+                ⏻ Cerrar sesión
+            </a>
+
+        </div>
+
         @endif
+
     </div>
-</div>
 
-<!-- Librerías de IA -->
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+    <!-- =========================
+         CONTENIDO
+    ========================= -->
 
-<script>
-    let camaraActiva = false;
-    let camera;
-    let hands;
+    <div class="layout">
 
-    function toggleCamara() {
-        const contenedor = document.getElementById('video-container');
-        const boton = document.getElementById('btnCamara');
+        <!-- HISTORIAL -->
 
-        if (!camaraActiva) {
-            contenedor.style.display = 'block';
-            boton.textContent = "❌ Detener Cámara";
-            iniciarCamara();
-            camaraActiva = true;
-        } else {
-            contenedor.style.display = 'none';
-            boton.textContent = "📷 Activar Cámara";
-            detenerCamara();
-            camaraActiva = false;
-        }
-    }
+        <div class="historial">
 
-    async function iniciarCamara() {
-        const video = document.getElementById('video');
-        hands = new Hands({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}` });
+            <h3>📜 Historial</h3>
 
-        hands.setOptions({
-            maxNumHands: 1,
-            modelComplexity: 1,
-            minDetectionConfidence: 0.7,
-            minTrackingConfidence: 0.7
-        });
+            @forelse($historial as $m)
 
-        hands.onResults(onResults);
+                <div class="mensaje">
 
-        camera = new Camera(video, {
-            onFrame: async () => {
-                await hands.send({ image: video });
-            },
-            width: 400,
-            height: 300
-        });
+                    <a href="{{ route('traductor.reconsultar', $m->id_traduccion) }}">
 
-        camera.start();
-    }
+                        <strong>
+                            {{ $m->texto_ingresado }}
+                        </strong>
 
-    function detenerCamara() {
-        if (camera) camera.stop();
-    }
+                    </a>
 
-    function onResults(results) {
-        const resultado = document.getElementById('resultado');
-        if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
-            resultado.textContent = "✋ Mano detectada correctamente";
-        } else {
-            resultado.textContent = "Esperando detección...";
-        }
-    }
-</script>
+                    <small style="display:block; margin-top:5px; color:#555;">
+                        {{ $m->fecha_traduccion }}
+                    </small>
+
+                </div>
+
+            @empty
+
+                <p style="text-align:center;color:#666;">
+                    No hay historial disponible
+                </p>
+
+            @endforelse
+
+        </div>
+
+        <!-- TRADUCTOR -->
+
+        <div class="traductor">
+
+            <h2>Traducir texto</h2>
+
+            <form action="{{ route('traductor.traducir') }}" method="POST">
+
+                @csrf
+
+                <textarea
+                    name="texto"
+                    placeholder="Escribe algo..."
+                    required>{{ $textoAnterior ?? '' }}</textarea>
+
+                <br>
+
+                <button type="submit" class="btn-primary">
+                    Traducir
+                </button>
+
+            </form>
+
+            <!-- RESULTADO -->
+
+            @if(isset($resultado) && count($resultado) > 0)
+
+            <div class="imagen-traduccion">
+
+                <h3>✨ Resultado</h3>
+
+                <div class="contenedor-resultado">
+
+                    @foreach($resultado as $item)
+
+                        <div class="resultado-card">
+
+                            @php
+                                $ruta = $item->ruta_imagen ?? ($item->imagen ?? null);
+                            @endphp
+
+                            @if($ruta && $ruta != 'images/signs/no-image.png')
+
+                                <img src="{{ asset($ruta) }}" alt="seña">
+
+                            @else
+
+                                <div style="
+                                    height:140px;
+                                    display:flex;
+                                    align-items:center;
+                                    justify-content:center;
+                                    background:#eee;
+                                    border-radius:15px;
+                                ">
+                                    <span style="font-size:40px; color:#999;">?</span>
+                                </div>
+
+                            @endif
+
+                            <p style="
+                                margin-top:10px;
+                                font-weight:bold;
+                                color:#0077b6;
+                            ">
+                                {{ $item->texto ?? '?' }}
+                            </p>
+
+                        </div>
+
+                    @endforeach
+
+                </div>
+
+            </div>
+
+            @endif
+
+        </div>
+
+    </div>
+
 </body>
+
 </html>

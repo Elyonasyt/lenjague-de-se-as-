@@ -1,77 +1,408 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
+
     <meta charset="UTF-8">
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Registro - Lenguaje de Señas</title>
+
+    <title>Registro | Sistema LSM</title>
+
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
-        body {
-            height: 100vh; display: flex; justify-content: center; align-items: center;
-            background: radial-gradient(circle at top left, #ff00cc, #ff8a00 70%);
-            position: relative; overflow: hidden;
+
+        *{
+            margin:0;
+            padding:0;
+            box-sizing:border-box;
+            font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-        .fondo { position: absolute; width: 100%; height: 100%; overflow: hidden; z-index: 0; }
-        .burbuja { position: absolute; bottom: -100px; background: rgba(255, 255, 255, 0.15); border-radius: 50%; animation: subir 10s infinite ease-in; }
-        @keyframes subir { from { transform: translateY(0) scale(1); opacity: 1; } to { transform: translateY(-110vh) scale(1.3); opacity: 0; } }
-        .contenedor {
-            position: relative; z-index: 2; width: 400px; padding: 50px 40px; border-radius: 25px;
-            background: rgba(255,255,255,0.1); backdrop-filter: blur(25px);
-            box-shadow: 0 0 40px rgba(255,50,150,0.5), inset 0 0 20px rgba(255,255,255,0.2);
-            text-align: center; color: white; animation: flotar 3s ease-in-out infinite;
+
+        body{
+
+            height:100vh;
+
+            display:flex;
+            justify-content:center;
+            align-items:center;
+
+            background:
+            linear-gradient(
+                135deg,
+                #00b4d8,
+                #48cae4,
+                #64dfdf,
+                #72efdd,
+                #80ffdb
+            );
+
+            overflow:hidden;
         }
-        @keyframes flotar { 0%,100%{transform:translateY(0);}50%{transform:translateY(-10px);} }
-        .icon { font-size: 80px; margin-bottom:15px; filter: drop-shadow(0 0 10px #ff4dd2); animation: brillo 3s infinite alternate; }
-        @keyframes brillo { from{filter: drop-shadow(0 0 5px #ff66cc);} to{filter: drop-shadow(0 0 20px #ff00ff);} }
-        h2 { margin-bottom:20px; letter-spacing:2px; font-weight:600; text-shadow:0 0 10px rgba(255,50,200,0.8);}
-        input { width: 90%; padding:12px; margin:10px 0; border:none; border-radius:12px; outline:none; background: rgba(255,255,255,0.95); font-size:15px; text-align:center; transition:0.3s; }
-        input:focus { transform: scale(1.05); box-shadow:0 0 15px #ff00ff; }
-        button { display:inline-block; width:90%; padding:14px; margin-top:15px; border:none; border-radius:12px; background:linear-gradient(90deg,#ff0080,#ff5e00); color:white; font-weight:bold; font-size:16px; cursor:pointer; transition:0.3s; box-shadow:0 0 20px rgba(255,50,200,0.6);}
-        button:hover { background:linear-gradient(90deg,#ff5e00,#ff00ff); transform:scale(1.08); box-shadow:0 0 30px rgba(255,0,255,0.9);}
-        a { display:block; margin-top:20px; color:#ffd6f0; text-decoration:none; font-size:14px; transition:0.2s; }
-        a:hover { text-shadow:0 0 10px #ff00ff; color:#fff; }
-        .luz { position:absolute; width:150px; height:150px; background:radial-gradient(circle, rgba(255,0,255,0.3), transparent); border-radius:50%; animation:moverLuz 6s infinite alternate; }
-        .luz:nth-child(1) { top:10%; left:10%; animation-delay:0s; }
-        .luz:nth-child(2) { bottom:10%; right:15%; animation-delay:3s; }
-        @keyframes moverLuz { 0%{transform:translate(0,0);}100%{transform:translate(40px,-40px);} }
-        .error { color:#ff4d4d; font-size:14px; margin-top:5px; text-align:left; }
+
+        body::before{
+
+            content:"";
+
+            position:absolute;
+
+            width:500px;
+            height:500px;
+
+            background:#7bffef;
+
+            border-radius:50%;
+
+            top:-150px;
+            left:-150px;
+
+            opacity:0.35;
+
+            filter:blur(120px);
+        }
+
+        body::after{
+
+            content:"";
+
+            position:absolute;
+
+            width:450px;
+            height:450px;
+
+            background:#00f5d4;
+
+            border-radius:50%;
+
+            bottom:-150px;
+            right:-120px;
+
+            opacity:0.35;
+
+            filter:blur(120px);
+        }
+
+        .contenedor{
+
+            position:relative;
+
+            width:950px;
+
+            padding:90px 90px;
+
+            border-radius:40px;
+
+            background:
+            rgba(255,255,255,0.22);
+
+            backdrop-filter:blur(25px);
+
+            border:
+            2px solid rgba(255,255,255,0.3);
+
+            box-shadow:
+            0 20px 60px rgba(0,0,0,0.25);
+
+            text-align:center;
+
+            z-index:10;
+
+            color:#000;
+        }
+
+        .icon{
+
+            font-size:110px;
+
+            margin-bottom:25px;
+
+            filter:
+            drop-shadow(0 0 25px rgba(0,255,220,0.7));
+        }
+
+        h2{
+
+            margin-bottom:45px;
+
+            font-weight:800;
+
+            font-size:48px;
+
+            color:#000;
+
+            text-shadow:none;
+        }
+
+        .form-group{
+
+            margin-bottom:30px;
+
+            text-align:left;
+        }
+
+        label{
+
+            display:block;
+
+            font-size:22px;
+
+            margin-bottom:10px;
+
+            color:#000;
+
+            font-weight:600;
+        }
+
+        input{
+
+            width:100%;
+
+            padding:22px;
+
+            border:none;
+
+            border-radius:18px;
+
+            font-size:20px;
+
+            background:
+            rgba(255,255,255,0.92);
+
+            color:#000;
+
+            transition:0.3s;
+
+            box-shadow:
+            0 8px 20px rgba(0,0,0,0.12);
+        }
+
+        input:focus{
+
+            outline:none;
+
+            transform:scale(1.02);
+
+            box-shadow:
+            0 0 0 5px rgba(0,245,212,0.35);
+        }
+
+        button{
+
+            width:100%;
+
+            padding:24px;
+
+            margin-top:20px;
+
+            background:#000;
+
+            border:none;
+
+            color:white;
+
+            font-size:24px;
+
+            font-weight:bold;
+
+            border-radius:20px;
+
+            cursor:pointer;
+
+            transition:0.35s;
+
+            box-shadow:
+            0 12px 30px rgba(0,0,0,0.35);
+        }
+
+        button:hover{
+
+            transform:
+            translateY(-5px)
+            scale(1.03);
+
+            background:#222;
+        }
+
+        a{
+
+            display:block;
+
+            margin-top:35px;
+
+            font-size:20px;
+
+            text-decoration:none;
+
+            color:#000;
+
+            font-weight:600;
+        }
+
+        a:hover{
+
+            text-decoration:underline;
+        }
+
+        .error{
+
+            margin-top:8px;
+
+            color:#ff0033;
+
+            font-size:16px;
+
+            font-weight:bold;
+        }
+
+        .alert{
+
+            background:
+            rgba(255,77,109,0.15);
+
+            color:#000;
+
+            padding:15px;
+
+            border-radius:14px;
+
+            margin-bottom:25px;
+
+            text-align:center;
+
+            border:
+            1px solid rgba(0,0,0,0.15);
+        }
+
+        @media(max-width:1000px){
+
+            .contenedor{
+
+                width:95%;
+
+                padding:50px 30px;
+            }
+
+            h2{
+
+                font-size:38px;
+            }
+
+            input{
+
+                font-size:18px;
+            }
+        }
+
     </style>
+
 </head>
+
 <body>
 
-<div class="fondo">
-    <div class="burbuja" style="width:80px; height:80px; left:10%; animation-delay:0s;"></div>
-    <div class="burbuja" style="width:50px; height:50px; left:25%; animation-delay:2s;"></div>
-    <div class="burbuja" style="width:100px; height:100px; left:40%; animation-delay:4s;"></div>
-    <div class="burbuja" style="width:60px; height:60px; left:60%; animation-delay:1s;"></div>
-    <div class="burbuja" style="width:90px; height:90px; left:75%; animation-delay:3s;"></div>
-</div>
-
-<div class="luz"></div>
-<div class="luz"></div>
-
 <div class="contenedor">
-    <div class="icon">👐</div>
-    <h2>Registro de Usuario</h2>
+    <div class="icon">
+        👐
+    </div>
+    <h2>
+        Crear Cuenta
+    </h2>
+    @if ($errors->any())
 
-    <form action="{{ route('registro.post') }}" method="POST">
+        <div class="alert">
+            {{ $errors->first() }}
+        </div>
+    @endif
+    <form action="{{ route('registro.guardar') }}" method="POST">
         @csrf
-        <input type="text" name="nombre" placeholder="Nombre completo" value="{{ old('nombre') }}">
-        @error('nombre') <div class="error">{{ $message }}</div> @enderror
+        <div class="form-group">
+            <label>Nombre</label>
+            <input
+                type="text"
+                name="first_name"
+                value="{{ old('first_name') }}"
+                autocomplete="given-name"
+                required>
+            @error('first_name')
 
-        <input type="email" name="correo" placeholder="Correo electrónico" value="{{ old('correo') }}">
-        @error('correo') <div class="error">{{ $message }}</div> @enderror
+                <div class="error">
+                    {{ $message }}
+                </div>
+            @enderror
+        </div>
+        <div class="form-group">
+            <label>Apellido paterno</label>
+            <input
+                type="text"
+                name="last_name"
+                value="{{ old('last_name') }}"
+                autocomplete="family-name"
+                required>
 
-        <input type="password" name="contrasena" placeholder="Contraseña">
-        @error('contrasena') <div class="error">{{ $message }}</div> @enderror
+            @error('last_name')
 
-        <input type="password" name="contrasena_confirmation" placeholder="Confirmar contraseña">
+                <div class="error">
+                    {{ $message }}
+                </div>
 
-        <button type="submit">Registrarse</button>
+            @enderror
+        </div>
+        <div class="form-group">
+            <label>Apellido materno</label>
+            <input
+                type="text"
+                name="middle_name"
+                value="{{ old('middle_name') }}"
+                required>
+            @error('middle_name')
+
+                <div class="error">
+                    {{ $message }}
+                </div>
+            @enderror
+        </div>
+        <div class="form-group">
+            <label>Correo electrónico</label>
+            <input
+                type="email"
+                name="email"
+                value="{{ old('email') }}"
+                autocomplete="email"
+                required>
+            @error('email')
+
+                <div class="error">
+                    {{ $message }}
+                </div>
+            @enderror
+        </div>
+        <div class="form-group">
+            <label>Contraseña</label>
+            <input
+                type="password"
+                name="password"
+                autocomplete="new-password"
+                required>
+            @error('password')
+            <div class="error">
+                    {{ $message }}
+                </div>
+            @enderror
+        </div>
+        <div class="form-group">
+            <label>Confirmar contraseña</label>
+            <input
+                type="password"
+                name="password_confirmation"
+                autocomplete="new-password"
+                required>
+        </div>
+        <button type="submit">
+
+            Registrarse
+        </button>
     </form>
-
-    <a href="/inicio">¿Ya tienes cuenta? Inicia sesión</a>
+    <a href="{{ route('login') }}">
+        ¿Ya tienes cuenta? Inicia sesión
+    </a>
 </div>
-
 </body>
 </html>

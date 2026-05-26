@@ -1,174 +1,353 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bienvenido - Lenguaje de Señas</title>
-    <style>
-        /* Reset */
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
 
-        /* Fondo animado */
-        body {
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background: radial-gradient(circle at 20% 30%, #002bff, #000);
-            overflow: hidden;
-            color: white;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-        /* Partículas flotantes */
-        .particle {
-            position: absolute;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.3);
-            animation: float 6s ease-in-out infinite;
-            pointer-events: none;
-        }
+<title>Bienvenido | Traductor LSM</title>
 
-        @keyframes float {
-            0%, 100% { transform: translateY(0) scale(1); opacity: 0.7; }
-            50% { transform: translateY(-50px) scale(1.5); opacity: 0.4; }
-        }
+<style>
 
-        .particle:nth-child(1) { width: 6px; height: 6px; top: 20%; left: 15%; animation-delay: 0s; }
-        .particle:nth-child(2) { width: 10px; height: 10px; top: 40%; left: 80%; animation-delay: 2s; }
-        .particle:nth-child(3) { width: 8px; height: 8px; top: 70%; left: 25%; animation-delay: 4s; }
-        .particle:nth-child(4) { width: 5px; height: 5px; top: 50%; left: 60%; animation-delay: 1s; }
-        .particle:nth-child(5) { width: 12px; height: 12px; top: 80%; left: 10%; animation-delay: 3s; }
+/* =========================
+   RESET
+========================= */
 
-        /* Contenedor principal */
-        .welcome-container {
-            position: relative;
-            background: rgba(255, 255, 255, 0.05);
-            border: 2px solid rgba(0, 217, 255, 0.8);
-            backdrop-filter: blur(25px);
-            box-shadow: 0 0 40px rgba(0, 200, 255, 0.4), 0 0 80px rgba(0, 100, 255, 0.2);
-            border-radius: 30px;
-            padding: 60px 50px;
-            max-width: 480px;
-            text-align: center;
-            z-index: 2;
-            overflow: hidden;
-            animation: pulse 6s infinite;
-        }
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:'Poppins',sans-serif;
+}
 
-        @keyframes pulse {
-            0%, 100% { box-shadow: 0 0 40px #00ffff, 0 0 80px #0077ff; }
-            50% { box-shadow: 0 0 60px #00bfff, 0 0 120px #0099ff; }
-        }
+/* =========================
+   FONDO GENERAL
+========================= */
 
-        .icon {
-            font-size: 90px;
-            margin-bottom: 15px;
-            text-shadow: 0 0 20px #00ffff, 0 0 40px #0077ff;
-            animation: flotar 3s ease-in-out infinite;
-        }
+body{
 
-        @keyframes flotar {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-10px); }
-        }
+    min-height:100vh;
 
-        h1 {
-            font-size: 40px;
-            margin-bottom: 20px;
-            background: linear-gradient(90deg, #00ffff, #ff00ff);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            animation: texto 6s ease infinite;
-        }
+    display:flex;
+    justify-content:center;
+    align-items:center;
 
-        @keyframes texto {
-            0%, 100% { letter-spacing: 1px; }
-            50% { letter-spacing: 3px; }
-        }
+    overflow:hidden;
 
-        p {
-            font-size: 17px;
-            margin-bottom: 30px;
-            color: #dffaff;
-            line-height: 1.5;
-        }
+    background:
+    linear-gradient(
+        135deg,
+        #b8fff9,
+        #8ef6ff,
+        #5ce1e6,
+        #48cae4,
+        #72efdd
+    );
 
-        /* Botones */
-        .btn {
-            display: inline-block;
-            margin: 10px;
-            padding: 14px 35px;
-            border-radius: 10px;
-            font-weight: bold;
-            text-decoration: none;
-            letter-spacing: 1px;
-            font-size: 15px;
-            color: white;
-            border: 2px solid transparent;
-            transition: all 0.4s ease;
-            cursor: pointer;
-        }
+    position:relative;
+}
 
-        .btn-login {
-            background: linear-gradient(90deg, #00e5ff, #0072ff);
-            box-shadow: 0 0 20px rgba(0, 170, 255, 0.7);
-        }
+/* =========================
+   BURBUJAS DE FONDO
+========================= */
 
-        .btn-login:hover {
-            transform: scale(1.1);
-            background: linear-gradient(90deg, #0072ff, #00e5ff);
-            box-shadow: 0 0 40px #00eaff;
-        }
+body::before{
 
-        .btn-register {
-            background: linear-gradient(90deg, #ff00cc, #3333ff);
-            box-shadow: 0 0 20px rgba(255, 0, 255, 0.7);
-        }
+    content:"";
 
-        .btn-register:hover {
-            transform: scale(1.1);
-            background: linear-gradient(90deg, #3333ff, #ff00cc);
-            box-shadow: 0 0 40px #ff00ff;
-        }
+    position:absolute;
 
-        .btn-free {
-            background: linear-gradient(90deg, #00ff66, #009933);
-            box-shadow: 0 0 20px rgba(0, 255, 100, 0.7);
-        }
+    width:700px;
+    height:700px;
 
-        .btn-free:hover {
-            transform: scale(1.1);
-            background: linear-gradient(90deg, #009933, #00ff66);
-            box-shadow: 0 0 40px rgba(0, 255, 100, 0.9);
-        }
+    background:#ffffff;
 
-        /* Efecto clic */
-        .btn:active {
-            transform: scale(0.95);
-            box-shadow: 0 0 10px #fff;
-        }
-    </style>
+    border-radius:50%;
+
+    top:-250px;
+    left:-250px;
+
+    opacity:0.30;
+
+    filter:blur(140px);
+}
+
+body::after{
+
+    content:"";
+
+    position:absolute;
+
+    width:650px;
+    height:650px;
+
+    background:#7bffef;
+
+    border-radius:50%;
+
+    bottom:-250px;
+    right:-250px;
+
+    opacity:0.35;
+
+    filter:blur(140px);
+}
+
+/* =========================
+   CONTENEDOR PRINCIPAL
+========================= */
+
+.welcome-container{
+
+    position:relative;
+
+    width:97%;
+    max-width:1450px;
+
+    padding:130px 110px;
+
+    border-radius:60px;
+
+    text-align:center;
+
+    background:
+    rgba(255,255,255,0.38);
+
+    backdrop-filter:blur(35px);
+
+    border:
+    3px solid rgba(255,255,255,0.60);
+
+    box-shadow:
+    0 25px 70px rgba(0,0,0,0.18);
+
+    animation:fadeIn 1s ease;
+
+    z-index:10;
+}
+
+/* =========================
+   ICONO
+========================= */
+
+.icon{
+
+    font-size:190px;
+
+    margin-bottom:45px;
+
+    animation:float 3s ease-in-out infinite;
+
+    filter:
+    drop-shadow(0 0 35px rgba(0,255,220,0.9));
+}
+
+/* =========================
+   TITULO
+========================= */
+
+.welcome-container h1{
+
+    font-size:100px;
+
+    font-weight:900;
+
+    line-height:1.15;
+
+    margin-bottom:45px;
+
+    color:#000;
+
+    text-shadow:
+    0 0 25px rgba(255,255,255,0.9);
+}
+
+/* =========================
+   TEXTO
+========================= */
+
+.welcome-container p{
+
+    font-size:40px;
+
+    line-height:1.9;
+
+    color:#004e64;
+
+    max-width:1200px;
+
+    margin:auto;
+
+    margin-bottom:75px;
+}
+
+/* =========================
+   BOTONES
+========================= */
+
+.buttons{
+
+    display:flex;
+
+    justify-content:center;
+
+    gap:45px;
+
+    flex-wrap:wrap;
+}
+
+.btn{
+
+    text-decoration:none;
+
+    padding:30px 85px;
+
+    border-radius:25px;
+
+    font-size:34px;
+
+    font-weight:bold;
+
+    transition:0.35s;
+
+    letter-spacing:1px;
+}
+
+/* =========================
+   BOTONES NEGROS
+========================= */
+
+.btn-login,
+.btn-register{
+
+    background:#000;
+
+    color:white;
+
+    box-shadow:
+    0 15px 35px rgba(0,0,0,0.40);
+}
+
+.btn-login:hover,
+.btn-register:hover{
+
+    transform:
+    translateY(-8px)
+    scale(1.08);
+
+    background:#222;
+
+    box-shadow:
+    0 20px 45px rgba(0,0,0,0.55);
+}
+
+/* =========================
+   ANIMACIONES
+========================= */
+
+@keyframes float{
+
+    0%{
+        transform:translateY(0px);
+    }
+
+    50%{
+        transform:translateY(-18px);
+    }
+
+    100%{
+        transform:translateY(0px);
+    }
+}
+
+@keyframes fadeIn{
+
+    from{
+        opacity:0;
+        transform:translateY(30px);
+    }
+
+    to{
+        opacity:1;
+        transform:translateY(0px);
+    }
+}
+
+/* =========================
+   RESPONSIVE
+========================= */
+
+@media(max-width:768px){
+
+    .welcome-container{
+
+        padding:60px 30px;
+    }
+
+    .welcome-container h1{
+
+        font-size:55px;
+    }
+
+    .welcome-container p{
+
+        font-size:24px;
+    }
+
+    .icon{
+
+        font-size:110px;
+    }
+
+    .btn{
+
+        width:100%;
+
+        font-size:24px;
+
+        padding:22px 30px;
+    }
+}
+
+</style>
+
 </head>
+
 <body>
 
-<!-- Partículas flotantes -->
-<div class="particle"></div>
-<div class="particle"></div>
-<div class="particle"></div>
-<div class="particle"></div>
-<div class="particle"></div>
-
-<!-- Contenedor principal -->
 <div class="welcome-container">
-    <div class="icon">🤟</div>
-    <h1>Bienvenido a Lenguaje de Señas</h1>
-    <p>Explora una experiencia futurista para aprender y traducir lenguaje de señas.</p>
 
-    <!-- Botones funcionales -->
-    <a href="/inicio" class="btn btn-login">🚀 Iniciar Sesión</a>
-    <a href="/registro" class="btn btn-register">✨ Registrarse</a>
+    <div class="icon">
+        🤟
+    </div>
+
+    <h1>
+        Traductor de Lenguaje de Señas
+    </h1>
+
+    <p>
+        Aprende, traduce y comunícate en Lenguaje de Señas
+    </p>
+
+    <div class="buttons">
+
+        <a href="/inicio" class="btn btn-login">
+
+            🚀 Iniciar Sesión
+
+        </a>
+
+        <a href="/registro" class="btn btn-register">
+
+            ✨ Registrarse
+
+        </a>
+
+    </div>
 
 </div>
 
 </body>
+
 </html>
