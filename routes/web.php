@@ -1,128 +1,65 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\DB;
-
-use App\Http\Controllers\LoginController;
-use App\Http\Controllers\RegistroController;
+use App\Http\Controllers\AuthController;
 use App\Http\Controllers\TraductorController;
-use App\Http\Controllers\PalabraController;
+use App\Http\Controllers\CamaraController;
+use App\Http\Controllers\AdminController;
 use App\Http\Controllers\BitacoraController;
-/*
-|--------------------------------------------------------------------------
-| PAGINA PRINCIPAL
-|--------------------------------------------------------------------------
-*/
-Route::get('/', function () {
-    return view('welcome');
-});
-/*
-|--------------------------------------------------------------------------
-| INICIO
-|--------------------------------------------------------------------------
-*/
-Route::get('/inicio', function () {
-    return view('inicio');
-})->name('inicio');
-/*
-|--------------------------------------------------------------------------
-| LOGIN
-|--------------------------------------------------------------------------
-*/
-Route::get('/login', [LoginController::class, 'login'])
-    ->name('login');
-Route::post('/login', [LoginController::class, 'autenticar'])
-    ->name('login.autenticar');
-Route::get('/logout', [LoginController::class, 'logout'])
- ->name('logout');
-/*
-|--------------------------------------------------------------------------
-| REGISTRO
-|--------------------------------------------------------------------------
-*/
-Route::get('/registro', [RegistroController::class, 'mostrarForm'])
-    ->name('registro.form');
-Route::post('/registro', [RegistroController::class, 'guardarUsuario'])
-    ->name('registro.guardar');
-/*
-|--------------------------------------------------------------------------
-| TRADUCTOR
-|--------------------------------------------------------------------------
-*/
-Route::get('/traductor', [TraductorController::class, 'index'])
-    ->name('traductor.index');
-Route::post('/traductor', [TraductorController::class, 'traducir'])
-    ->name('traductor.traducir');
-Route::get('/traductor/reconsultar/{id}', [TraductorController::class, 'reconsultar'])
-    ->name('traductor.reconsultar');
-/*
-|--------------------------------------------------------------------------
-| ADMIN
-|--------------------------------------------------------------------------
-*/
-Route::get('/admin', function () {
-    $usuarios = DB::table('users')->get();
-    $categorias = DB::table('categories')->get();
-    $palabras = DB::table('words')->get();
-    $traducciones = DB::table('translations')->get();
-    return view('admin', compact(
-        'usuarios',
-        'categorias',
-        'palabras',
-        'traducciones'
-    ));
 
-})->name('admin');
+Route::get('/', fn() => view('welcome'))->name('welcome');
 
-/*
-|--------------------------------------------------------------------------
-| PALABRAS
-|--------------------------------------------------------------------------
-*/
+/* =========================
+   AUTENTICACIÓN
+========================= */
+Route::get('/inicio', [AuthController::class, 'loginForm'])->name('login');
+Route::post('/inicio', [AuthController::class, 'login'])->name('login.autenticar');
 
-Route::get('/palabras', [PalabraController::class, 'index'])
-    ->name('palabras.index');
+Route::get('/registro', [AuthController::class, 'registroForm'])->name('registro.form');
+Route::post('/registro', [AuthController::class, 'registro'])->name('registro.guardar');
 
-Route::get('/palabras/create', [PalabraController::class, 'create'])
-    ->name('palabras.create');
+Route::get('/logout', [AuthController::class, 'logout'])->name('logout');
 
-Route::post('/palabras/store', [PalabraController::class, 'store'])
-    ->name('palabras.store');
+/* =========================
+   TRADUCTOR
+========================= */
+Route::get('/traductor', [TraductorController::class, 'index'])->name('traductor');
+Route::post('/traductor/traducir', [TraductorController::class, 'traducir'])->name('traductor.traducir');
+Route::get('/traductor/reconsultar/{id}', [TraductorController::class, 'reconsultar'])->name('traductor.reconsultar');
 
-Route::get('/palabras/edit/{id}', [PalabraController::class, 'edit'])
-    ->name('palabras.edit');
+/* =========================
+   CÁMARA + IA
+========================= */
+Route::get('/camara', [CamaraController::class, 'index'])->name('camara');
+Route::post('/camara/muestras', [CamaraController::class, 'guardarMuestras'])->name('camara.muestras');
+Route::post('/camara/guardar-traduccion', [CamaraController::class, 'guardarTraduccion'])->name('camara.guardarTraduccion');
 
-Route::post('/palabras/update/{id}', [PalabraController::class, 'update'])
-    ->name('palabras.update');
+/* =========================
+   ADMINISTRADOR
+========================= */
+Route::get('/admin', [AdminController::class, 'index'])->name('admin');
 
-Route::get('/palabras/delete/{id}', [PalabraController::class, 'destroy'])
-    ->name('palabras.delete');
+Route::post('/usuarios/store', [AdminController::class, 'usuarioStore'])->name('usuarios.store');
+Route::post('/usuarios/update/{id}', [AdminController::class, 'usuarioUpdate'])->name('usuarios.update');
+Route::get('/usuarios/delete/{id}', [AdminController::class, 'usuarioDelete'])->name('usuarios.delete');
 
-/*
-|--------------------------------------------------------------------------
-| BITACORA
-|--------------------------------------------------------------------------
-*/
+Route::post('/categorias/store', [AdminController::class, 'categoriaStore'])->name('categorias.store');
+Route::post('/categorias/update/{id}', [AdminController::class, 'categoriaUpdate'])->name('categorias.update');
+Route::get('/categorias/delete/{id}', [AdminController::class, 'categoriaDelete'])->name('categorias.delete');
 
-Route::get('/bitacora', [BitacoraController::class, 'verBitacora'])
-    ->name('bitacora');
-    
-    use App\Http\Controllers\AuditoriaController;
+Route::post('/palabras/store', [AdminController::class, 'palabraStore'])->name('palabras.store');
+Route::post('/palabras/update/{id}', [AdminController::class, 'palabraUpdate'])->name('palabras.update');
+Route::get('/palabras/delete/{id}', [AdminController::class, 'palabraDelete'])->name('palabras.delete');
 
-Route::get('/auditoria',[AuditoriaController::class,'index']);
+Route::post('/imagenes/store', [AdminController::class, 'imagenStore'])->name('imagenes.store');
+Route::post('/imagenes/update/{id}', [AdminController::class, 'imagenUpdate'])->name('imagenes.update');
+Route::get('/imagenes/delete/{id}', [AdminController::class, 'imagenDelete'])->name('imagenes.delete');
 
+Route::post('/traducciones/update/{id}', [AdminController::class, 'traduccionUpdate'])->name('traducciones.update');
+Route::get('/traducciones/delete/{id}', [AdminController::class, 'traduccionDelete'])->name('traducciones.delete');
 
-Route::get(
-    '/traductor',
-    [TraductorController::class, 'index']
-)->name('traductor.index');
-
-Route::post(
-    '/traductor',
-    [TraductorController::class, 'traducir']
-)->name('traductor.traducir');
-
-Route::get(
-    '/traductor/reconsultar/{id}',
-    [TraductorController::class, 'reconsultar']
-)->name('traductor.reconsultar');
+/* =========================
+   BITÁCORA / LOGS
+========================= */
+Route::get('/bitacora', [BitacoraController::class, 'index'])->name('bitacora');
+Route::get('/logs', [BitacoraController::class, 'laravelLogs'])->name('logs');

@@ -4,200 +4,179 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Str;
 
 class TraductorController extends Controller
 {
-
-    /* =========================================
-       INDEX
-    ========================================= */
-
     public function index()
     {
-        $userId = Session::get('usuario_id');
-
-        /* =========================
-           OBTENER USUARIO
-        ========================= */
-
-        $usuario = DB::table('users')
-            ->where('id_user', $userId)
-            ->first();
-
-        /* =========================
-           HISTORIAL
-        ========================= */
-
-        $historial = DB::table('translations')
-            ->where('id_usuario', $userId)
-            ->orderBy('fecha_traduccion', 'desc')
-            ->get();
-
-        /* =========================
-           RESULTADO
-        ========================= */
-
-        $resultado = Session::get('resultado', []);
-
-        return view('traductor', [
-            'usuario' => $usuario,
-            'historial' => $historial,
-            'resultado' => $resultado,
-            'textoAnterior' => session('textoAnterior', '')
-        ]);
+        $idUsuario = $this->usuarioId();
+        return $this->render($idUsuario, [], '');
     }
-
-    /* =========================================
-       TRADUCIR
-    ========================================= */
 
     public function traducir(Request $request)
     {
         $request->validate([
-            'texto' => 'required|string|max:1000'
+            'texto' => ['required','string','max:1000'],
+            'tipo_entrada' => ['nullable','in:TEXTO,VOZ,CAMARA'],
         ]);
 
-        $textoCompleto = trim($request->texto);
+        $idUsuario = $this->usuarioId();
+        $texto = trim($request->texto);
+        $tipo = $request->input('tipo_entrada', 'TEXTO');
 
-        // Convertir a minúsculas
-        $texto = mb_strtolower($textoCompleto, 'UTF-8');
+        $resultado = $this->resolverTexto($texto);
 
-        $userId = Session::get('usuario_id');
-
-        /* =========================
-           SEPARAR PALABRAS
-        ========================= */
-
-        $palabras = preg_split(
-            '/\s+/',
-            $texto,
-            -1,
-            PREG_SPLIT_NO_EMPTY
-        );
-
-        $resultado = [];
-
-        foreach ($palabras as $palabra) {
-
-            /* =========================
-               BUSCAR PALABRA COMPLETA
-            ========================= */
-
-            $imagen = DB::table('images')
-                ->whereRaw(
-                    'LOWER(descripcion) = ?',
-                    [$palabra]
-                )
-                ->first();
-
-            if ($imagen) {
-
-                $resultado[] = (object)[
-                    'texto' => ucfirst($palabra),
-                    'ruta_imagen' => $imagen->ruta_imagen
-                ];
-
-            } else {
-
-                /* =========================
-                   DELETREAR LETRA POR LETRA
-                ========================= */
-
-                $letras = preg_split(
-                    '//u',
-                    $palabra,
-                    -1,
-                    PREG_SPLIT_NO_EMPTY
-                );
-
-                foreach ($letras as $letra) {
-
-                    $imagenLetra = DB::table('images')
-                        ->whereRaw(
-                            'LOWER(descripcion) = ?',
-                            [mb_strtolower($letra, 'UTF-8')]
-                        )
-                        ->first();
-
-                    $resultado[] = (object)[
-                        'texto' => strtoupper($letra),
-                        'ruta_imagen' => $imagenLetra
-                            ? $imagenLetra->ruta_imagen
-                            : 'images/signs/no-image.png'
-                    ];
-                }
-            }
-        }
-
-        /* =========================
-           GUARDAR HISTORIAL
-        ========================= */
-
-        DB::table('translations')->insert([
-            'texto_ingresado' => $textoCompleto,
-            'resultado_json' => json_encode($resultado),
+        $idTraduccion = DB::table('translations')->insertGetId([
+            'texto_ingresado' => $texto,
             'fecha_traduccion' => now(),
-            'id_usuario' => $userId
+            'id_usuario' => $idUsuario,
+            'id_palabra' => null,
+            'resultado_json' => json_encode($resultado, JSON_UNESCAPED_UNICODE),
+            'tipo_entrada' => $tipo,
         ]);
 
-        /* =========================
-           GUARDAR SESSION
-        ========================= */
+        DB::table('history')->insert([
+            'id_traduccion' => $idTraduccion,
+        ]);
 
-        Session::put('resultado', $resultado);
-
-        return redirect()
-            ->route('traductor.index')
-            ->with('textoAnterior', $textoCompleto);
+        return $this->render($idUsuario, $resultado, $texto);
     }
-
-    /* =========================================
-       RECONSULTAR
-    ========================================= */
 
     public function reconsultar($id)
     {
-        $userId = Session::get('usuario_id');
+        $idUsuario = $this->usuarioId();
 
-        /* =========================
-           USUARIO
-        ========================= */
-
-        $usuario = DB::table('users')
-            ->where('id_user', $userId)
-            ->first();
-
-        /* =========================
-           HISTORIAL
-        ========================= */
-
-        $historial = DB::table('translations')
-            ->where('id_usuario', $userId)
-            ->orderBy('fecha_traduccion', 'desc')
-            ->get();
-
-        /* =========================
-           OBTENER REGISTRO
-        ========================= */
-
-        $registro = DB::table('translations')
+        $t = DB::table('translations')
             ->where('id_traduccion', $id)
+            ->where('id_usuario', $idUsuario)
             ->first();
 
-        if (!$registro) {
+        abort_if(!$t, 404);
 
-            return redirect()
-                ->route('traductor.index');
+        $resultado = json_decode($t->resultado_json ?? '[]', true);
+        if (!is_array($resultado)) {
+            $resultado = [];
         }
 
-        $resultado = json_decode($registro->resultado_json);
+        return $this->render($idUsuario, $resultado, $t->texto_ingresado);
+    }
 
-        return view('traductor', [
-            'usuario' => $usuario,
-            'historial' => $historial,
-            'resultado' => $resultado,
-            'textoAnterior' => $registro->texto_ingresado
-        ]);
+    private function render(int $idUsuario, array $resultado, string $textoAnterior)
+    {
+        $usuario = DB::table('users')
+            ->where('id_user', $idUsuario)
+            ->first();
+
+        $historial = DB::table('history as h')
+            ->join('translations as t', 't.id_traduccion', '=', 'h.id_traduccion')
+            ->where('t.id_usuario', $idUsuario)
+            ->orderByDesc('t.fecha_traduccion')
+            ->select('t.*')
+            ->limit(100)
+            ->get();
+
+        return view('traductor', compact(
+            'usuario',
+            'historial',
+            'resultado',
+            'textoAnterior'
+        ));
+    }
+
+    private function resolverTexto(string $texto): array
+    {
+        $normalizado = Str::lower(Str::ascii($texto));
+        $normalizado = preg_replace('/[^a-z0-9\s]/u', ' ', $normalizado);
+        $tokens = preg_split('/\s+/', trim($normalizado));
+
+        $salida = [];
+
+        foreach ($tokens as $token) {
+            if ($token === '') {
+                continue;
+            }
+
+            $completa = $this->buscarPalabra($token);
+
+            if ($completa) {
+                $salida[] = $completa;
+                continue;
+            }
+
+            $letras = preg_split('//u', strtoupper($token), -1, PREG_SPLIT_NO_EMPTY);
+
+            foreach ($letras as $letra) {
+                $item = $this->buscarLetra($letra);
+
+                $salida[] = $item ?? [
+                    'texto' => $letra,
+                    'ruta_imagen' => 'images/signs/no-image.svg',
+                    'tipo' => 'NO_ENCONTRADO',
+                ];
+            }
+        }
+
+        return $salida;
+    }
+
+    private function buscarPalabra(string $texto): ?array
+    {
+        $fila = DB::table('words as w')
+            ->join('categories as c', 'c.id_categoria', '=', 'w.id_categoria')
+            ->leftJoin('images as i', 'i.id_palabra', '=', 'w.id_palabra')
+            ->whereRaw('LOWER(TRIM(w.palabra_espanol)) = ?', [strtolower($texto)])
+            ->orderByRaw("CASE WHEN c.tipo_categoria='PALABRAS' THEN 0 ELSE 1 END")
+            ->select(
+                'w.id_palabra',
+                'w.palabra_espanol',
+                'c.tipo_categoria',
+                'i.ruta_imagen'
+            )
+            ->first();
+
+        if (!$fila || !$fila->ruta_imagen) {
+            return null;
+        }
+
+        return [
+            'id_palabra' => $fila->id_palabra,
+            'texto' => strtoupper($fila->palabra_espanol),
+            'ruta_imagen' => $fila->ruta_imagen,
+            'tipo' => $fila->tipo_categoria,
+        ];
+    }
+
+    private function buscarLetra(string $letra): ?array
+    {
+        $fila = DB::table('words as w')
+            ->join('categories as c', 'c.id_categoria', '=', 'w.id_categoria')
+            ->leftJoin('images as i', 'i.id_palabra', '=', 'w.id_palabra')
+            ->whereRaw('UPPER(TRIM(w.palabra_espanol)) = ?', [strtoupper($letra)])
+            ->where('c.tipo_categoria', 'LETRAS')
+            ->select(
+                'w.id_palabra',
+                'w.palabra_espanol',
+                'i.ruta_imagen'
+            )
+            ->first();
+
+        if (!$fila || !$fila->ruta_imagen) {
+            return null;
+        }
+
+        return [
+            'id_palabra' => $fila->id_palabra,
+            'texto' => strtoupper($fila->palabra_espanol),
+            'ruta_imagen' => $fila->ruta_imagen,
+            'tipo' => 'LETRAS',
+        ];
+    }
+
+    private function usuarioId(): int
+    {
+        $id = session('usuario_id');
+        abort_if(!$id, 401, 'Debes iniciar sesión.');
+        return (int)$id;
     }
 }

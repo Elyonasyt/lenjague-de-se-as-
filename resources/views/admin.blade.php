@@ -1,739 +1,324 @@
 <!DOCTYPE html>
-
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Panel Admin</title>
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administrador LSM</title>
     <style>
-
-        *{
-            margin:0;
-            padding:0;
-            box-sizing:border-box;
-            font-family:Arial;
-        }
-
-        body{
-            display:flex;
-            background:#eef2f7;
-            font-size:18px; /* Aumenta tamaño general */
-        }
-
-        /* SIDEBAR */
-
-        .sidebar{
-            width:260px;
-            height:100vh;
-            background:linear-gradient(#0d47ff,#00c6ff);
-            color:white;
-            padding:40px 20px;
-            position:fixed;
-        }
-
-        .sidebar h2{
-            text-align:center;
-            margin-bottom:50px;
-            font-size:28px;
-        }
-
-        .sidebar a{
-            display:block;
-            padding:16px;
-            color:white;
-            text-decoration:none;
-            border-radius:10px;
-            margin-bottom:12px;
-            cursor:pointer;
-            font-size:18px;
-        }
-
-        .sidebar a:hover{
-            background:rgba(255,255,255,0.2);
-        }
-
-        /* MAIN */
-
-        .main{
-            margin-left:260px;
-            padding:40px;
-            width:100%;
-        }
-
-        .main h1{
-            font-size:32px;
-            margin-bottom:20px;
-        }
-
-        .seccion{
-            display:none;
-            background:white;
-            padding:35px;
-            border-radius:12px;
-            box-shadow:0 5px 10px rgba(0,0,0,0.1);
-        }
-
-        /* FORMULARIOS */
-
-        input, select{
-            padding:10px;
-            margin:8px;
-            font-size:16px;
-            border-radius:6px;
-            border:1px solid #ccc;
-        }
-
-        /* TABLAS */
-
-        table{
-            width:100%;
-            border-collapse:collapse;
-            margin-top:25px;
-            font-size:16px;
-        }
-
-        thead{
-            background:#0d47ff;
-            color:white;
-        }
-
-        th,td{
-            padding:14px;
-            text-align:center;
-        }
-
-        tr{
-            border-bottom:1px solid #ddd;
-        }
-
-        /* BOTONES */
-
-        button{
-            padding:8px 14px;
-            border:none;
-            border-radius:6px;
-            cursor:pointer;
-            font-size:15px;
-        }
-
-        .editar{background:#ffc107;}
-        .eliminar{background:#dc3545;color:white;}
-        .guardar{background:#28a745;color:white;}
-        .cancelar{background:#6c757d;color:white;}
-        .agregar{
-            background:#28a745;
-            color:white;
-            margin-bottom:15px;
-            padding:10px 18px;
-        }
-
+        *{box-sizing:border-box;font-family:Arial,sans-serif}
+        body{margin:0;background:#eef2f7;color:#111}
+        .sidebar{position:fixed;left:0;top:0;width:245px;height:100vh;background:linear-gradient(#0d47ff,#00c6ff);padding:28px 18px;color:#fff;overflow:auto}
+        .sidebar h2{text-align:center}
+        .sidebar button,.sidebar a{display:block;width:100%;padding:13px;margin:8px 0;border:0;border-radius:10px;background:rgba(255,255,255,.12);color:#fff;text-align:left;text-decoration:none;cursor:pointer;font-weight:bold}
+        .main{margin-left:245px;padding:30px}
+        .section{display:none;background:#fff;border-radius:18px;padding:24px;box-shadow:0 5px 18px rgba(0,0,0,.08);overflow:auto}
+        .section.active{display:block}
+        .form-grid{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+        input,select,textarea{padding:10px;border:1px solid #ccc;border-radius:8px}
+        button{padding:9px 14px;border:0;border-radius:8px;cursor:pointer}
+        .green{background:#16a34a;color:#fff}.yellow{background:#fbbf24}.red{background:#dc2626;color:#fff}.blue{background:#0284c7;color:#fff}
+        table{width:100%;border-collapse:collapse;margin-top:18px;min-width:850px}
+        th{background:#0d47ff;color:#fff}
+        th,td{padding:10px;border-bottom:1px solid #ddd;text-align:center}
+        img.thumb{width:70px;height:70px;object-fit:contain;background:#f5f5f5;border-radius:8px}
+        .alert{padding:12px;border-radius:10px;margin:12px 0}.ok{background:#dcfce7;color:#166534}.bad{background:#fee2e2;color:#991b1b}
+        @media(max-width:900px){.sidebar{position:static;width:100%;height:auto}.main{margin-left:0}.sidebar button,.sidebar a{display:inline-block;width:auto}}
     </style>
-
-    <script>
-
-        /* MOSTRAR SECCIONES */
-
-        function mostrar(seccion){
-
-            document.querySelectorAll(".seccion").forEach(s=>{
-                s.style.display="none"
-            })
-
-            document.getElementById(seccion).style.display="block"
-
-        }
-
-        window.onload=function(){
-            mostrar('usuarios')
-        }
-
-        /* EDITAR FILA GENERICA */
-
-        function editarFila(id){
-
-            document.getElementById("texto_"+id).style.display="none"
-            document.getElementById("input_"+id).style.display="inline"
-
-            if(document.getElementById("texto_tipo_"+id)){
-                document.getElementById("texto_tipo_"+id).style.display="none"
-                document.getElementById("input_tipo_"+id).style.display="inline"
-            }
-
-            document.getElementById("btnEditar_"+id).style.display="none"
-            document.getElementById("btnGuardar_"+id).style.display="inline"
-            document.getElementById("btnCancelar_"+id).style.display="inline"
-
-        }
-
-        function cancelarFila(id){
-
-            document.getElementById("texto_"+id).style.display="inline"
-            document.getElementById("input_"+id).style.display="none"
-
-            if(document.getElementById("texto_tipo_"+id)){
-                document.getElementById("texto_tipo_"+id).style.display="inline"
-                document.getElementById("input_tipo_"+id).style.display="none"
-            }
-
-            document.getElementById("btnEditar_"+id).style.display="inline"
-            document.getElementById("btnGuardar_"+id).style.display="none"
-            document.getElementById("btnCancelar_"+id).style.display="none"
-
-        }
-
-        /* PALABRAS */
-
-        function editarPalabra(id){
-
-            document.getElementById("texto_palabra_"+id).style.display="none"
-            document.getElementById("input_palabra_"+id).style.display="inline"
-
-            document.getElementById("texto_cat_"+id).style.display="none"
-            document.getElementById("input_cat_"+id).style.display="inline"
-
-            document.getElementById("guardar_palabra_"+id).style.display="inline"
-            document.getElementById("cancelar_palabra_"+id).style.display="inline"
-
-        }
-
-        function cancelarPalabra(id){
-
-            document.getElementById("texto_palabra_"+id).style.display="inline"
-            document.getElementById("input_palabra_"+id).style.display="none"
-
-            document.getElementById("texto_cat_"+id).style.display="inline"
-            document.getElementById("input_cat_"+id).style.display="none"
-
-            document.getElementById("guardar_palabra_"+id).style.display="none"
-            document.getElementById("cancelar_palabra_"+id).style.display="none"
-
-        }
-
-        /* TRADUCCIONES */
-
-        function editarTraduccion(id){
-
-            document.getElementById("texto_trad_"+id).style.display="none"
-            document.getElementById("input_trad_"+id).style.display="inline"
-
-            document.getElementById("guardar_trad_"+id).style.display="inline"
-            document.getElementById("cancelar_trad_"+id).style.display="inline"
-
-        }
-
-        function cancelarTraduccion(id){
-
-            document.getElementById("texto_trad_"+id).style.display="inline"
-            document.getElementById("input_trad_"+id).style.display="none"
-
-            document.getElementById("guardar_trad_"+id).style.display="none"
-            document.getElementById("cancelar_trad_"+id).style.display="none"
-
-        }
-
-    </script>
-
 </head>
-
 <body>
 
 <div class="sidebar">
-
     <h2>LSM 🤟</h2>
 
-    <a onclick="mostrar('usuarios')">Usuarios</a> <a onclick="mostrar('categorias')">Categorías</a> <a onclick="mostrar('palabras')">Palabras</a> <a onclick="mostrar('traducciones')">Traducciones</a>
+    <button onclick="showSection('usuarios')">👤 Usuarios</button>
+    <button onclick="showSection('categorias')">📂 Categorías</button>
+    <button onclick="showSection('palabras')">📝 Palabras</button>
+    <button onclick="showSection('imagenes')">🖼️ Imágenes</button>
+    <button onclick="showSection('muestras')">🧠 Muestras IA</button>
+    <button onclick="showSection('traducciones')">🔄 Traducciones</button>
 
+    <a href="{{ route('bitacora') }}">📊 Bitácora</a>
+    <a href="{{ route('logs') }}">📄 Logs Laravel</a>
+    <a href="{{ route('traductor') }}">🤟 Traductor</a>
+    <a href="{{ route('logout') }}">⏻ Cerrar sesión</a>
 </div>
 
 <div class="main">
+    <h1>Panel de administración</h1>
 
-    <h1>Panel de Administración</h1>
+    @if(session('success'))
+        <div class="alert ok">{{ session('success') }}</div>
+    @endif
 
-    <!-- ===================== USUARIOS ===================== -->
+    @if($errors->any())
+        <div class="alert bad">{{ $errors->first() }}</div>
+    @endif
 
-    <div id="usuarios" class="seccion">
-
+    <section id="usuarios" class="section active">
         <h2>Usuarios</h2>
 
-        <form action="/usuarios/store" method="POST">
+        <form action="{{ route('usuarios.store') }}" method="POST" class="form-grid">
             @csrf
-
-            <input type="text" name="first_name" placeholder="Nombre" required>
-            <input type="text" name="last_name" placeholder="Apellido Paterno" required>
-            <input type="text" name="middle_name" placeholder="Apellido Materno">
-            <input type="email" name="email" placeholder="Email" required>
+            <input name="first_name" placeholder="Nombre" required>
+            <input name="last_name" placeholder="Apellido paterno" required>
+            <input name="middle_name" placeholder="Apellido materno">
+            <input type="email" name="email" placeholder="Correo" required>
             <input type="password" name="password" placeholder="Contraseña" required>
-
-            <button type="submit" class="agregar">Agregar Usuario</button>
-
+            <select name="role">
+                <option value="USER">USER</option>
+                <option value="ADMIN">ADMIN</option>
+            </select>
+            <button class="green">Agregar</button>
         </form>
 
         <table>
-
-            <thead>
             <tr>
-                <th>ID</th>
-                <th>Nombre</th>
-                <th>Apellido P</th>
-                <th>Apellido M</th>
-                <th>Email</th>
-                <th>Password</th>
-                <th>Registro</th>
-                <th>Acciones</th>
+                <th>ID</th><th>Nombre</th><th>Apellidos</th><th>Email</th>
+                <th>Rol</th><th>Registro</th><th>Acciones</th>
             </tr>
-            </thead>
-
-            <tbody>
 
             @foreach($usuarios as $u)
-
                 <tr>
-
-                    <form action="/usuarios/update/{{ $u->id_user }}" method="POST">
+                    <form action="{{ route('usuarios.update', $u->id_user) }}" method="POST">
                         @csrf
-
                         <td>{{ $u->id_user }}</td>
-
+                        <td><input name="first_name" value="{{ $u->first_name }}" required></td>
                         <td>
-
-<span id="texto_nombre_{{ $u->id_user }}">
-{{ $u->first_name }}
-</span>
-
-                            <input
-                                type="text"
-                                name="first_name"
-                                value="{{ $u->first_name }}"
-                                id="input_nombre_{{ $u->id_user }}"
-                                style="display:none">
-
+                            <input name="last_name" value="{{ $u->last_name }}" required>
+                            <input name="middle_name" value="{{ $u->middle_name }}">
                         </td>
-
+                        <td><input type="email" name="email" value="{{ $u->email }}" required></td>
                         <td>
-
-<span id="texto_ap_{{ $u->id_user }}">
-{{ $u->last_name }}
-</span>
-
-                            <input
-                                type="text"
-                                name="last_name"
-                                value="{{ $u->last_name }}"
-                                id="input_ap_{{ $u->id_user }}"
-                                style="display:none">
-
+                            <select name="role">
+                                <option value="USER" {{ $u->role==='USER' ? 'selected' : '' }}>USER</option>
+                                <option value="ADMIN" {{ $u->role==='ADMIN' ? 'selected' : '' }}>ADMIN</option>
+                            </select>
                         </td>
-
-                        <td>
-
-<span id="texto_am_{{ $u->id_user }}">
-{{ $u->middle_name }}
-</span>
-
-                            <input
-                                type="text"
-                                name="middle_name"
-                                value="{{ $u->middle_name }}"
-                                id="input_am_{{ $u->id_user }}"
-                                style="display:none">
-
-                        </td>
-
-                        <td>
-
-<span id="texto_email_{{ $u->id_user }}">
-{{ $u->email }}
-</span>
-
-                            <input
-                                type="email"
-                                name="email"
-                                value="{{ $u->email }}"
-                                id="input_email_{{ $u->id_user }}"
-                                style="display:none">
-
-                        </td>
-
-                        <td>
-
-<span id="texto_pass_{{ $u->id_user }}">
-{{ $u->password }}
-</span>
-
-                            <input
-                                type="text"
-                                name="password"
-                                value="{{ $u->password }}"
-                                id="input_pass_{{ $u->id_user }}"
-                                style="display:none">
-
-                        </td>
-
                         <td>{{ $u->registration_date }}</td>
-
                         <td>
-
-                            <button
-                                type="button"
-                                class="editar"
-                                onclick="editarUsuario('{{ $u->id_user }}')">
-                                Editar </button>
-
-                            <button
-                                type="submit"
-                                class="guardar"
-                                id="guardar_user_{{ $u->id_user }}"
-                                style="display:none">
-                                Guardar </button>
-
-                            <button
-                                type="button"
-                                class="cancelar"
-                                onclick="cancelarUsuario('{{ $u->id_user }}')"
-                                id="cancelar_user_{{ $u->id_user }}"
-                                style="display:none">
-                                Cancelar </button>
-
-                            <a href="/usuarios/delete/{{ $u->id_user }}">
-                                <button type="button" class="eliminar">
-                                    Eliminar
-                                </button>
+                            <input type="password" name="password" placeholder="Nueva contraseña">
+                            <button class="yellow">Guardar</button>
+                            <a href="{{ route('usuarios.delete', $u->id_user) }}" onclick="return confirm('¿Eliminar usuario?')">
+                                <button type="button" class="red">Eliminar</button>
                             </a>
-
                         </td>
-
                     </form>
-
                 </tr>
-
             @endforeach
-
-            </tbody>
-
         </table>
+    </section>
 
-    </div>
-
-    <!-- ===================== CATEGORIAS ===================== -->
-
-    <div id="categorias" class="seccion">
-
+    <section id="categorias" class="section">
         <h2>Categorías</h2>
 
-        <form action="/categorias/store" method="POST">
+        <form action="{{ route('categorias.store') }}" method="POST" class="form-grid">
             @csrf
-
-            <input type="text" name="nombre_categoria" placeholder="Nombre" required>
-
+            <input name="nombre_categoria" placeholder="Nombre categoría" required>
             <select name="tipo_categoria" required>
-                <option value="">Seleccione tipo</option>
                 <option value="NUMEROS">NUMEROS</option>
                 <option value="LETRAS">LETRAS</option>
                 <option value="PALABRAS">PALABRAS</option>
                 <option value="COLORES">COLORES</option>
             </select>
-
-            <button type="submit" class="agregar">Agregar Categoría</button>
-
+            <input name="descripcion" placeholder="Descripción">
+            <button class="green">Agregar</button>
         </form>
 
         <table>
-
-            <thead>
-            <tr>
-                <th>ID</th>
-                <th>Nombre</th>
-                <th>Tipo</th>
-                <th>Acciones</th>
-            </tr>
-            </thead>
-
-            <tbody>
+            <tr><th>ID</th><th>Nombre</th><th>Tipo</th><th>Descripción</th><th>Acciones</th></tr>
 
             @foreach($categorias as $c)
-
                 <tr>
-
-                    <form action="/categorias/update/{{ $c->id_categoria }}" method="POST">
+                    <form action="{{ route('categorias.update', $c->id_categoria) }}" method="POST">
                         @csrf
-
                         <td>{{ $c->id_categoria }}</td>
-
+                        <td><input name="nombre_categoria" value="{{ $c->nombre_categoria }}" required></td>
                         <td>
-
-<span id="texto_{{ $c->id_categoria }}">
-{{ $c->nombre_categoria }}
-</span>
-
-                            <input
-                                type="text"
-                                name="nombre_categoria"
-                                value="{{ $c->nombre_categoria }}"
-                                id="input_{{ $c->id_categoria }}"
-                                style="display:none">
-
-                        </td>
-
-                        <td>
-
-<span id="texto_tipo_{{ $c->id_categoria }}">
-{{ $c->tipo_categoria }}
-</span>
-
-                            <select
-                                name="tipo_categoria"
-                                id="input_tipo_{{ $c->id_categoria }}"
-                                style="display:none">
-
-                                <option value="NUMEROS" {{ $c->tipo_categoria=='NUMEROS'?'selected':'' }}>NUMEROS</option>
-                                <option value="LETRAS" {{ $c->tipo_categoria=='LETRAS'?'selected':'' }}>LETRAS</option>
-                                <option value="PALABRAS" {{ $c->tipo_categoria=='PALABRAS'?'selected':'' }}>PALABRAS</option>
-                                <option value="COLORES" {{ $c->tipo_categoria=='COLORES'?'selected':'' }}>COLORES</option>
-
+                            <select name="tipo_categoria">
+                                @foreach(['NUMEROS','LETRAS','PALABRAS','COLORES'] as $tipo)
+                                    <option value="{{ $tipo }}" {{ $c->tipo_categoria===$tipo ? 'selected' : '' }}>{{ $tipo }}</option>
+                                @endforeach
                             </select>
-
                         </td>
-
+                        <td><input name="descripcion" value="{{ $c->descripcion }}"></td>
                         <td>
-
-                            <button
-                                type="button"
-                                class="editar"
-                                id="btnEditar_{{ $c->id_categoria }}"
-                                onclick="editarFila('{{ $c->id_categoria }}')">
-                                Editar </button>
-
-                            <button
-                                type="submit"
-                                class="guardar"
-                                id="btnGuardar_{{ $c->id_categoria }}"
-                                style="display:none">
-                                Guardar </button>
-
-                            <button
-                                type="button"
-                                class="cancelar"
-                                id="btnCancelar_{{ $c->id_categoria }}"
-                                onclick="cancelarFila('{{ $c->id_categoria }}')"
-                                style="display:none">
-                                Cancelar </button>
-
-                            <a href="/categorias/delete/{{ $c->id_categoria }}">
-                                <button type="button" class="eliminar">Eliminar</button>
+                            <button class="yellow">Guardar</button>
+                            <a href="{{ route('categorias.delete', $c->id_categoria) }}" onclick="return confirm('¿Eliminar categoría?')">
+                                <button type="button" class="red">Eliminar</button>
                             </a>
-
                         </td>
-
                     </form>
-
                 </tr>
-
             @endforeach
-
-            </tbody>
-
         </table>
+    </section>
 
-    </div>
-
-
-    <!-- ===================== PALABRAS ===================== -->
-    <!-- ===================== PALABRAS ===================== -->
-
-    <div id="palabras" class="seccion">
-
+    <section id="palabras" class="section">
         <h2>Palabras</h2>
 
-        <form action="/palabras/store" method="POST">
+        <form action="{{ route('palabras.store') }}" method="POST" class="form-grid">
             @csrf
-
-            <input type="text" name="palabra_espanol" placeholder="Palabra">
-
-            <!-- SELECT EN VEZ DE INPUT -->
+            <input name="palabra_espanol" placeholder="Palabra / letra / número" required>
             <select name="id_categoria" required>
-                <option value="">Seleccione categoría</option>
-
                 @foreach($categorias as $c)
                     <option value="{{ $c->id_categoria }}">
-                        {{ $c->nombre_categoria }}
+                        {{ $c->tipo_categoria }} - {{ $c->nombre_categoria }}
                     </option>
                 @endforeach
-
             </select>
-
-            <button class="agregar">Agregar Palabra</button>
-
+            <button class="green">Agregar</button>
         </form>
 
         <table>
-
-            <thead>
-            <tr>
-                <th>ID</th>
-                <th>Palabra</th>
-                <th>Categoría</th>
-                <th>Acciones</th>
-            </tr>
-            </thead>
-
-            <tbody>
+            <tr><th>ID</th><th>Palabra</th><th>Categoría</th><th>Acciones</th></tr>
 
             @foreach($palabras as $p)
-
                 <tr>
-
-                    <form action="/palabras/update/{{ $p->id_palabra }}" method="POST">
+                    <form action="{{ route('palabras.update', $p->id_palabra) }}" method="POST">
                         @csrf
-
                         <td>{{ $p->id_palabra }}</td>
-
-                        <!-- PALABRA -->
+                        <td><input name="palabra_espanol" value="{{ $p->palabra_espanol }}" required></td>
                         <td>
-                        <span id="texto_palabra_{{ $p->id_palabra }}">
-                            {{ $p->palabra_espanol }}
-                        </span>
-
-                            <input type="text"
-                                   name="palabra_espanol"
-                                   value="{{ $p->palabra_espanol }}"
-                                   id="input_palabra_{{ $p->id_palabra }}"
-                                   style="display:none">
-                        </td>
-
-                        <!-- 🔥 CATEGORIA (YA CON NOMBRE) -->
-                        <td>
-
-                        <span id="texto_cat_{{ $p->id_palabra }}">
-                            {{ $p->nombre_categoria }}
-                        </span>
-
-                            <!-- SELECT PARA EDITAR -->
-                            <select name="id_categoria"
-                                    id="input_cat_{{ $p->id_palabra }}"
-                                    style="display:none">
-
+                            <select name="id_categoria">
                                 @foreach($categorias as $c)
-                                    <option value="{{ $c->id_categoria }}"
-                                        {{ $p->id_categoria == $c->id_categoria ? 'selected' : '' }}>
+                                    <option value="{{ $c->id_categoria }}" {{ $p->id_categoria==$c->id_categoria ? 'selected' : '' }}>
+                                        {{ $c->tipo_categoria }} - {{ $c->nombre_categoria }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </td>
+                        <td>
+                            <button class="yellow">Guardar</button>
+                            <a href="{{ route('palabras.delete', $p->id_palabra) }}" onclick="return confirm('¿Eliminar palabra?')">
+                                <button type="button" class="red">Eliminar</button>
+                            </a>
+                        </td>
+                    </form>
+                </tr>
+            @endforeach
+        </table>
+    </section>
+
+    <section id="imagenes" class="section">
+        <h2>Imágenes de señas</h2>
+
+        <form action="{{ route('imagenes.store') }}" method="POST" enctype="multipart/form-data" class="form-grid">
+            @csrf
+            <select name="id_categoria" required>
+                @foreach($categorias as $c)
+                    <option value="{{ $c->id_categoria }}">{{ $c->nombre_categoria }}</option>
+                @endforeach
+            </select>
+
+            <select name="id_palabra">
+                <option value="">Sin palabra</option>
+                @foreach($palabras as $p)
+                    <option value="{{ $p->id_palabra }}">{{ $p->palabra_espanol }}</option>
+                @endforeach
+            </select>
+
+            <input type="file" name="imagen" accept="image/*" required>
+            <input name="descripcion" placeholder="Descripción">
+            <button class="green">Agregar imagen</button>
+        </form>
+
+        <table>
+            <tr><th>ID</th><th>Vista</th><th>Palabra</th><th>Categoría</th><th>Descripción</th><th>Acciones</th></tr>
+
+            @foreach($imagenes as $i)
+                <tr>
+                    <form action="{{ route('imagenes.update', $i->id_imagen) }}" method="POST" enctype="multipart/form-data">
+                        @csrf
+                        <td>{{ $i->id_imagen }}</td>
+                        <td><img class="thumb" src="{{ asset($i->ruta_imagen) }}"></td>
+                        <td>
+                            <select name="id_palabra">
+                                <option value="">Sin palabra</option>
+                                @foreach($palabras as $p)
+                                    <option value="{{ $p->id_palabra }}" {{ $i->id_palabra==$p->id_palabra ? 'selected' : '' }}>
+                                        {{ $p->palabra_espanol }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </td>
+                        <td>
+                            <select name="id_categoria">
+                                @foreach($categorias as $c)
+                                    <option value="{{ $c->id_categoria }}" {{ $i->id_categoria==$c->id_categoria ? 'selected' : '' }}>
                                         {{ $c->nombre_categoria }}
                                     </option>
                                 @endforeach
-
                             </select>
-
                         </td>
-
                         <td>
-
-                            <button type="button"
-                                    class="editar"
-                                    onclick="editarPalabra('{{ $p->id_palabra }}')">
-                                Editar
-                            </button>
-
-                            <button type="submit"
-                                    class="guardar"
-                                    id="guardar_palabra_{{ $p->id_palabra }}"
-                                    style="display:none">
-                                Guardar
-                            </button>
-
-                            <button type="button"
-                                    class="cancelar"
-                                    onclick="cancelarPalabra('{{ $p->id_palabra }}')"
-                                    id="cancelar_palabra_{{ $p->id_palabra }}"
-                                    style="display:none">
-                                Cancelar
-                            </button>
-
-                            <a href="/palabras/delete/{{ $p->id_palabra }}">
-                                <button type="button" class="eliminar">
-                                    Eliminar
-                                </button>
-                            </a>
-
+                            <input name="descripcion" value="{{ $i->descripcion }}">
+                            <input type="file" name="imagen" accept="image/*">
                         </td>
-
+                        <td>
+                            <button class="yellow">Guardar</button>
+                            <a href="{{ route('imagenes.delete', $i->id_imagen) }}" onclick="return confirm('¿Eliminar imagen?')">
+                                <button type="button" class="red">Eliminar</button>
+                            </a>
+                        </td>
                     </form>
-
                 </tr>
-
             @endforeach
-
-            </tbody>
-
         </table>
+    </section>
 
-    </div>
-
-    <!-- ===================== TRADUCCIONES ===================== -->
-
-    <div id="traducciones" class="seccion">
-
-        <h2>Traducciones</h2>
-
+    <section id="muestras" class="section">
+        <h2>Muestras de entrenamiento IA</h2>
         <table>
+            <tr><th>ID palabra</th><th>Palabra</th><th>Muestras</th></tr>
+            @foreach($muestras as $m)
+                <tr>
+                    <td>{{ $m->id_palabra }}</td>
+                    <td>{{ $m->palabra_espanol }}</td>
+                    <td>{{ $m->total }}</td>
+                </tr>
+            @endforeach
+        </table>
+    </section>
 
-            <thead>
-            <tr>
-                <th>ID</th>
-                <th>Texto</th>
-                <th>Usuario</th>
-                <th>Fecha</th>
-                <th>Acciones</th>
-            </tr>
-            </thead>
-
-            <tbody>
+    <section id="traducciones" class="section">
+        <h2>Traducciones</h2>
+        <table>
+            <tr><th>ID</th><th>Texto</th><th>Usuario</th><th>Tipo</th><th>Fecha</th><th>Acciones</th></tr>
 
             @foreach($traducciones as $t)
-
                 <tr>
-
-                    <form action="/traducciones/update/{{ $t->id_traduccion }}" method="POST">
+                    <form action="{{ route('traducciones.update', $t->id_traduccion) }}" method="POST">
                         @csrf
-
                         <td>{{ $t->id_traduccion }}</td>
-
-                        <td>
-
-                            <span id="texto_trad_{{ $t->id_traduccion }}">{{ $t->texto_ingresado }}</span>
-
-                            <input type="text" name="texto_ingresado" value="{{ $t->texto_ingresado }}" id="input_trad_{{ $t->id_traduccion }}" style="display:none">
-
-                        </td>
-
+                        <td><input name="texto_ingresado" value="{{ $t->texto_ingresado }}"></td>
                         <td>{{ $t->first_name }} {{ $t->last_name }}</td>
-
-                        <td>{{ $t->fecha_traduccion }}</td>
-
                         <td>
-
-                            <button type="button" class="editar" onclick="editarTraduccion('{{ $t->id_traduccion }}')">Editar</button>
-
-                            <button type="submit" class="guardar" id="guardar_trad_{{ $t->id_traduccion }}" style="display:none">Guardar</button>
-
-                            <button type="button" class="cancelar" onclick="cancelarTraduccion('{{ $t->id_traduccion }}')" id="cancelar_trad_{{ $t->id_traduccion }}" style="display:none">Cancelar</button>
-
-                            <a href="/traducciones/delete/{{ $t->id_traduccion }}">
-                                <button type="button" class="eliminar">Eliminar</button>
-                            </a>
-
+                            <select name="tipo_entrada">
+                                @foreach(['TEXTO','VOZ','CAMARA'] as $tipo)
+                                    <option value="{{ $tipo }}" {{ $t->tipo_entrada===$tipo ? 'selected' : '' }}>{{ $tipo }}</option>
+                                @endforeach
+                            </select>
                         </td>
-
+                        <td>{{ $t->fecha_traduccion }}</td>
+                        <td>
+                            <button class="yellow">Guardar</button>
+                            <a href="{{ route('traducciones.delete', $t->id_traduccion) }}" onclick="return confirm('¿Eliminar traducción?')">
+                                <button type="button" class="red">Eliminar</button>
+                            </a>
+                        </td>
                     </form>
-
                 </tr>
-
             @endforeach
-
-            </tbody>
-
         </table>
-
-    </div>
-
+    </section>
 </div>
+
+<script>
+function showSection(id){
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+}
+</script>
 
 </body>
 </html>

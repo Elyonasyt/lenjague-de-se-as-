@@ -5,79 +5,110 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Session;
 
 class AuthController extends Controller
 {
-
-    // ==============================
-    // REGISTRO
-    // ==============================
-    public function register(Request $request)
+    public function loginForm()
     {
+        if (session()->has('usuario_id')) {
+            return redirect()->route('traductor');
+        }
 
+        return view('inicio');
+    }
+
+    public function registroForm()
+    {
+        if (session()->has('usuario_id')) {
+            return redirect()->route('traductor');
+        }
+
+        return view('registro');
+    }
+
+    public function registro(Request $request)
+    {
         $request->validate([
-            'first_name' => 'required|string|max:100',
-            'last_name' => 'required|string|max:100',
-            'middle_name' => 'required|string|max:100',
-            'email' => 'required|email|unique:users,email',
-            'password' => 'required|min:6|confirmed'
+            'first_name' => ['required','string','max:100'],
+            'last_name' => ['required','string','max:100'],
+            'middle_name' => ['nullable','string','max:100'],
+            'email' => ['required','email','max:150','unique:users,email'],
+            'password' => ['required','string','min:8','confirmed'],
+        ], [
+            'email.unique' => 'Ese correo ya está registrado.',
+            'password.confirmed' => 'Las contraseñas no coinciden.',
         ]);
 
         DB::table('users')->insert([
-            'first_name' => $request->first_name,
-            'last_name' => $request->last_name,
-            'middle_name' => $request->middle_name,
-            'email' => $request->email,
+            'first_name' => trim($request->first_name),
+            'last_name' => trim($request->last_name),
+            'middle_name' => $request->middle_name ? trim($request->middle_name) : null,
+            'email' => strtolower(trim($request->email)),
             'password' => Hash::make($request->password),
-            'registration_date' => now()
+            'registration_date' => now()->toDateString(),
+            'role' => 'USER',
         ]);
 
-        return redirect('/inicio')->with('success','Registro exitoso. Inicia sesión.');
+        return redirect()->route('login')
+            ->with('success', 'Cuenta creada correctamente. Ya puedes iniciar sesión.');
     }
 
-
-    // ==============================
-    // LOGIN
-    // ==============================
     public function login(Request $request)
     {
-
         $request->validate([
-            'email' => 'required|email',
-            'password' => 'required'
+            'email' => ['required','email'],
+            'password' => ['required','string'],
         ]);
 
         $usuario = DB::table('users')
-            ->where('email',$request->email)
+            ->where('email', strtolower(trim($request->email)))
             ->first();
 
-        if($usuario && Hash::check($request->password,$usuario->Passwor)){
-
-            Session::put('usuario_id',$usuario->id_user);
-            Session::put('usuario_nombre',$usuario->first_name);
-
-            return redirect('/traductor');
-
+        if (!$usuario || !Hash::check($request->password, $usuario->password)) {
+            return back()
+                ->withErrors(['email' => 'Correo o contraseña incorrectos.'])
+                ->withInput($request->only('email'));
         }
 
-        return back()->withErrors([
-            'credenciales' => 'Correo o contraseña incorrectos'
+        $request->session()->regenerate();
+
+        session([
+            'usuario_id' => $usuario->id_user,
+            'usuario_nombre' => $usuario->first_name . ' ' . $usuario->last_name,
+            'usuario_email' => $usuario->email,
+            'usuario_role' => $usuario->role,
         ]);
 
+        DB::table('bitacora')->insert([
+            'id_usuario' => $usuario->id_user,
+            'accion' => 'LOGIN',
+            'tabla' => 'users',
+            'descripcion' => 'Inicio de sesión',
+            'fecha' => now(),
+        ]);
+
+        if ($usuario->role === 'ADMIN') {
+            return redirect()->route('admin');
+        }
+
+        return redirect()->route('traductor');
     }
 
-
-    // ==============================
-    // LOGOUT
-    // ==============================
-    public function logout()
+    public function logout(Request $request)
     {
+        if (session()->has('usuario_id')) {
+            DB::table('bitacora')->insert([
+                'id_usuario' => session('usuario_id'),
+                'accion' => 'LOGOUT',
+                'tabla' => 'users',
+                'descripcion' => 'Cierre de sesión',
+                'fecha' => now(),
+            ]);
+        }
 
-        Session::flush();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
 
-        return redirect('/inicio')->with('success','Sesión cerrada correctamente');
-
+        return redirect()->route('login');
     }
-
 }

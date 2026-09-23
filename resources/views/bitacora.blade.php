@@ -1,91 +1,33 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <title>Bitácora del Sistema</title>
-
-    <style>
-        body{
-            background:#0f172a;
-            color:white;
-            font-family:Arial;
-            padding:30px;
-        }
-
-        h1{
-            margin-bottom:20px;
-        }
-
-        .log-box{
-            background:#1e293b;
-            padding:20px;
-            border-radius:15px;
-            margin-bottom:20px;
-            border-left:5px solid #00c6ff;
-        }
-
-        .insert{ border-left-color:#00ff99; }
-        .update{ border-left-color:#ffc107; }
-        .delete{ border-left-color:#ff4d4d; }
-
-        .fecha{
-            color:#00ffcc;
-            font-weight:bold;
-            margin-bottom:10px;
-        }
-
-        pre{
-            white-space:pre-wrap;
-            word-wrap:break-word;
-        }
-    </style>
+<meta charset="UTF-8">
+<title>Bitácora LSM</title>
+<style>
+body{background:#0f172a;color:#fff;font-family:Arial;padding:30px}
+a{color:#67e8f9}
+.log{background:#1e293b;padding:18px;border-radius:14px;margin:12px 0;border-left:5px solid #22d3ee}
+.insert{border-left-color:#22c55e}.update{border-left-color:#f59e0b}.delete{border-left-color:#ef4444}.login{border-left-color:#8b5cf6}.logout{border-left-color:#64748b}
+small{color:#94a3b8}
+</style>
 </head>
-
 <body>
+<h1>📊 Bitácora del sistema</h1>
+<p><a href="{{ route('admin') }}">← Volver al administrador</a></p>
 
-<h1>📊 Bitácora del Sistema</h1>
-
-@forelse($bitacora as $log)
-
-    @php
-        $tipo = strtolower($log->accion);
-    @endphp
-
-    <div class="log-box {{ $tipo }}">
-
-        <div class="fecha">
-            [{{ $log->fecha }}]
-        </div>
-
-        @php
-            $accionTexto = match(strtolower($log->accion)) {
-                'insert' => 'insertó',
-                'update' => 'actualizó',
-                'delete' => 'eliminó',
-                default => strtolower($log->accion)
-            };
-
-            $nombre = $log->first_name . ' ' . $log->last_name;
-        @endphp
-
-        <strong>Usuario:</strong> {{ $nombre }}
+@forelse($bitacora as $b)
+    <div class="log {{ strtolower($b->accion) }}">
+        <strong>{{ $b->accion }}</strong> · {{ $b->tabla }}
         <br>
-
-        <strong>Acción:</strong> {{ $nombre }} {{ $accionTexto }} este registro
+        Usuario:
+        {{ trim(($b->first_name ?? '') . ' ' . ($b->last_name ?? '')) ?: 'Sistema / usuario eliminado' }}
         <br>
-
-        <strong>Tabla:</strong> {{ $log->tabla }}
-        <br><br>
-
-        <pre>{{ $log->descripcion }}</pre>
-
+        {{ $b->descripcion }}
+        <br>
+        <small>{{ $b->fecha }}</small>
     </div>
-
 @empty
-
-    <p>No hay registros en la bitácora</p>
-
+    <p>No hay registros.</p>
 @endforelse
-
 </body>
 </html>

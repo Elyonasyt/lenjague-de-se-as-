@@ -1,50 +1,22 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-
 <meta charset="UTF-8">
-
-<title>Logs</title>
-
-<meta http-equiv="refresh" content="3">
-
+<title>Logs Laravel</title>
+<meta http-equiv="refresh" content="5">
 <style>
-
-body{
-background:#0f172a;
-color:white;
-font-family:Arial;
-padding:30px;
-}
-
-.log-box{
-background:#1e293b;
-padding:20px;
-margin-bottom:20px;
-border-radius:15px;
-border-left:5px solid #00ffcc;
-}
-
-pre{
-white-space:pre-wrap;
-}
-
+body{background:#0f172a;color:#fff;font-family:monospace;padding:25px}
+a{color:#67e8f9}.row{background:#1e293b;padding:10px;border-radius:8px;margin:6px 0;white-space:pre-wrap;word-break:break-word}
 </style>
-
 </head>
 <body>
+<h1>📄 Logs Laravel</h1>
+<p><a href="{{ route('admin') }}">← Volver al administrador</a></p>
 
-<h1>Logs Laravel</h1>
-
-@foreach($logs as $log)
-
-<div class="log-box">
-
-<pre>[{{ $log }}</pre>
-
-</div>
-
-@endforeach
-
+@forelse($logs as $log)
+    <div class="row">{{ $log }}</div>
+@empty
+    <p>No hay logs o el archivo laravel.log todavía no existe.</p>
+@endforelse
 </body>
 </html>
