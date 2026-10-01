@@ -4,95 +4,260 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Schema;
 
 class CamaraController extends Controller
 {
+    /*
+    |--------------------------------------------------------------------------
+    | MOSTRAR PÁGINA DE CÁMARA
+    |--------------------------------------------------------------------------
+    */
+
     public function index()
     {
-        $this->usuarioId();
+        /*
+         * No usamos categories porque en tu base de datos
+         * actualmente no existe categories.nombre.
+         *
+         * Solo obtenemos directamente las palabras.
+         */
 
-        $palabras = DB::table('words as w')
-            ->join('categories as c', 'c.id_categoria', '=', 'w.id_categoria')
+        $palabras = DB::table('words')
             ->select(
-                'w.id_palabra',
-                'w.palabra_espanol',
-                'c.tipo_categoria',
-                'c.nombre_categoria'
+                'id_palabra',
+                'palabra_espanol',
+                DB::raw("'Palabra / Letra' AS tipo_categoria")
             )
-            ->orderBy('c.tipo_categoria')
-            ->orderBy('w.palabra_espanol')
+            ->orderBy('palabra_espanol', 'asc')
             ->get();
 
-        return view('camara', compact('palabras'));
+        return view(
+            'camara',
+            compact('palabras')
+        );
     }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | GUARDAR MUESTRAS PARA ENTRENAMIENTO
+    |--------------------------------------------------------------------------
+    */
 
     public function guardarMuestras(Request $request)
     {
-        $this->usuarioId();
-
         $request->validate([
-            'id_palabra' => ['required','integer','exists:words,id_palabra'],
-            'muestras' => ['required','array','min:1','max:250'],
-            'muestras.*' => ['required','array','size:63'],
-            'muestras.*.*' => ['required','numeric'],
+            'id_palabra' => 'required|integer',
+            'muestras' => 'required|array|min:1',
+            'muestras.*' => 'required|array|size:63',
+            'muestras.*.*' => 'required|numeric',
         ]);
 
-        $filas = [];
 
-        foreach ($request->muestras as $landmarks) {
-            $filas[] = [
-                'id_palabra' => (int)$request->id_palabra,
-                'landmarks_json' => json_encode(
-                    array_map('floatval', $landmarks),
-                    JSON_UNESCAPED_UNICODE
-                ),
-                'fecha_registro' => now(),
-            ];
+        /*
+         * Buscar palabra seleccionada.
+         */
+
+        $palabra = DB::table('words')
+            ->where(
+                'id_palabra',
+                $request->id_palabra
+            )
+            ->first();
+
+
+        if (!$palabra) {
+
+            return response()->json([
+                'ok' => false,
+                'message' => 'La palabra seleccionada no existe.'
+            ], 404);
         }
 
-        DB::table('sign_samples')->insert($filas);
+
+        /*
+         * Crear carpeta:
+         *
+         * storage/app/lsm_dataset
+         */
+
+        $directorio = storage_path(
+            'app/lsm_dataset'
+        );
+
+
+        if (!File::exists($directorio)) {
+
+            File::makeDirectory(
+                $directorio,
+                0755,
+                true
+            );
+        }
+
+
+        /*
+         * Archivo donde se guardarán
+         * todas las muestras.
+         */
+
+        $archivo = $directorio
+            . DIRECTORY_SEPARATOR
+            . 'muestras.jsonl';
+
+
+        $contenido = "";
+
+
+        foreach ($request->muestras as $muestra) {
+
+            $registro = [
+
+                'id_palabra' =>
+                    $palabra->id_palabra,
+
+                'etiqueta' =>
+                    mb_strtolower(
+                        trim(
+                            $palabra->palabra_espanol
+                        )
+                    ),
+
+                'puntos' =>
+                    array_map(
+                        'floatval',
+                        $muestra
+                    )
+
+            ];
+
+
+            $contenido .=
+                json_encode(
+                    $registro,
+                    JSON_UNESCAPED_UNICODE
+                )
+                . PHP_EOL;
+        }
+
+
+        File::append(
+            $archivo,
+            $contenido
+        );
+
 
         return response()->json([
             'ok' => true,
-            'guardadas' => count($filas),
+            'message' => 'Muestras guardadas correctamente.',
+            'palabra' => $palabra->palabra_espanol,
+            'cantidad' => count($request->muestras)
         ]);
     }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | GUARDAR FRASE RECONOCIDA
+    |--------------------------------------------------------------------------
+    */
 
     public function guardarTraduccion(Request $request)
     {
-        $idUsuario = $this->usuarioId();
-
         $request->validate([
-            'texto' => ['required','string','max:1000'],
-            'confianza' => ['nullable','numeric','between:0,1'],
+            'frase' => 'required|string|max:2000'
         ]);
 
-        $id = DB::table('translations')->insertGetId([
-            'texto_ingresado' => trim($request->texto),
-            'fecha_traduccion' => now(),
-            'id_usuario' => $idUsuario,
-            'id_palabra' => null,
-            'resultado_json' => json_encode([
-                'confianza' => $request->confianza,
-                'origen' => 'IA_CAMARA',
-            ], JSON_UNESCAPED_UNICODE),
-            'tipo_entrada' => 'CAMARA',
-        ]);
 
-        DB::table('history')->insert([
-            'id_traduccion' => $id,
-        ]);
+        $idUsuario = session(
+            'usuario_id'
+        );
+
+
+        if (!$idUsuario) {
+
+            return response()->json([
+                'ok' => false,
+                'message' => 'La sesión del usuario expiró.'
+            ], 401);
+        }
+
+
+        /*
+         * Datos básicos para translations.
+         */
+
+        $datos = [
+
+            'texto_ingresado' =>
+                trim($request->frase),
+
+            'resultado_json' =>
+                json_encode(
+                    [
+                        'origen' => 'CAMARA',
+                        'texto' => trim($request->frase)
+                    ],
+                    JSON_UNESCAPED_UNICODE
+                ),
+
+            'fecha_traduccion' =>
+                now(),
+
+            'id_usuario' =>
+                $idUsuario,
+
+            'id_palabra' =>
+                null
+        ];
+
+
+        /*
+         * Si existe tipo_entrada,
+         * guardamos CAMARA.
+         */
+
+        if (
+            Schema::hasColumn(
+                'translations',
+                'tipo_entrada'
+            )
+        ) {
+
+            $datos['tipo_entrada'] =
+                'CAMARA';
+        }
+
+
+        /*
+         * Insertar traducción.
+         */
+
+        $idTraduccion = DB::table(
+            'translations'
+        )
+        ->insertGetId(
+            $datos
+        );
+
+
+        /*
+         * Guardar en historial.
+         */
+
+        DB::table('history')
+            ->insert([
+                'id_traduccion' =>
+                    $idTraduccion
+            ]);
+
 
         return response()->json([
             'ok' => true,
-            'id_traduccion' => $id,
+            'message' => 'Frase guardada correctamente.',
+            'id_traduccion' => $idTraduccion
         ]);
-    }
-
-    private function usuarioId(): int
-    {
-        $id = session('usuario_id');
-        abort_if(!$id, 401, 'Debes iniciar sesión.');
-        return (int)$id;
     }
 }

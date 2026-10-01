@@ -1,107 +1,264 @@
 from pathlib import Path
-import os
 
-import joblib
 import numpy as np
-from dotenv import load_dotenv
-from flask import Flask, jsonify, request
+import joblib
+
+from flask import Flask
+from flask import request
+from flask import jsonify
+
 from flask_cors import CORS
 
-BASE = Path(__file__).resolve().parent
-MODELOS = BASE / "modelos"
 
-load_dotenv(BASE / ".env")
+BASE_DIR = Path(
+    __file__
+).resolve().parent
+
+
+MODELO_PATH = (
+    BASE_DIR
+    / "modelo_lsm.joblib"
+)
+
 
 app = Flask(__name__)
+
+
 CORS(app)
 
+
 modelo = None
-encoder = None
-
-
-def normalizar(vector):
-    arr = np.asarray(vector, dtype=np.float32).reshape(21, 3)
-    arr = arr - arr[0]
-
-    escala = np.max(np.linalg.norm(arr, axis=1))
-
-    if escala > 1e-8:
-        arr = arr / escala
-
-    return arr.flatten()
 
 
 def cargar_modelo():
-    global modelo, encoder
 
-    m = MODELOS / "modelo_lsm.joblib"
-    e = MODELOS / "encoder_lsm.joblib"
+    global modelo
 
-    if not m.exists() or not e.exists():
+
+    if not MODELO_PATH.exists():
+
+        print("")
+        print(
+            "No existe modelo_lsm.joblib"
+        )
+
+        print(
+            "Ejecuta primero:"
+        )
+
+        print("")
+        print(
+            "py entrenar.py"
+        )
+
+        print("")
+
         modelo = None
-        encoder = None
-        return False
 
-    modelo = joblib.load(m)
-    encoder = joblib.load(e)
+        return
 
-    return True
+
+    modelo = joblib.load(
+        MODELO_PATH
+    )
+
+
+    print("")
+    print(
+        "Modelo cargado correctamente."
+    )
+
+    print(
+        "Clases:"
+    )
+
+    print(
+        modelo.classes_
+    )
+
+    print("")
 
 
 cargar_modelo()
 
 
-@app.get("/health")
-def health():
+@app.route(
+    "/salud",
+    methods=["GET"]
+)
+def salud():
+
     return jsonify({
+
         "ok": True,
-        "modelo_cargado": modelo is not None,
-        "clases": encoder.classes_.tolist() if encoder is not None else []
+
+        "modelo_cargado":
+            modelo is not None
+
     })
 
 
-@app.post("/reload")
-def reload_model():
-    ok = cargar_modelo()
-    return jsonify({"ok": ok})
+@app.route(
+    "/predecir",
+    methods=["POST"]
+)
+def predecir():
 
+    if modelo is None:
 
-@app.post("/predict")
-def predict():
-    if modelo is None or encoder is None:
         return jsonify({
+
             "ok": False,
-            "error": "No existe un modelo entrenado."
+
+            "message":
+                "El modelo no está entrenado."
+
         }), 503
 
-    data = request.get_json(silent=True) or {}
-    vector = data.get("landmarks")
 
-    if not isinstance(vector, list) or len(vector) != 63:
+    datos = request.get_json(
+        silent=True
+    )
+
+
+    if not datos:
+
         return jsonify({
+
             "ok": False,
-            "error": "Se requieren exactamente 63 valores."
-        }), 422
 
-    x = normalizar(vector).reshape(1, -1)
+            "message":
+                "No se recibieron datos."
 
-    probabilidades = modelo.predict_proba(x)[0]
-    idx = int(np.argmax(probabilidades))
-    clase_codificada = modelo.classes_[idx]
+        }), 400
 
-    palabra = encoder.inverse_transform([int(clase_codificada)])[0]
-    confianza = float(probabilidades[idx])
 
-    return jsonify({
-        "ok": True,
-        "palabra": str(palabra),
-        "confianza": confianza
-    })
+    puntos = datos.get(
+        "puntos"
+    )
+
+
+    if puntos is None:
+
+        return jsonify({
+
+            "ok": False,
+
+            "message":
+                "No se recibió puntos."
+
+        }), 400
+
+
+    if len(puntos) != 63:
+
+        return jsonify({
+
+            "ok": False,
+
+            "message":
+                "Se necesitan exactamente 63 valores."
+
+        }), 400
+
+
+    try:
+
+        entrada = np.array(
+
+            puntos,
+
+            dtype=np.float32
+
+        ).reshape(
+
+            1,
+
+            -1
+
+        )
+
+
+        probabilidades = (
+            modelo.predict_proba(
+                entrada
+            )[0]
+        )
+
+
+        indice = int(
+            np.argmax(
+                probabilidades
+            )
+        )
+
+
+        palabra = str(
+            modelo.classes_[
+                indice
+            ]
+        )
+
+
+        valor_confianza = float(
+            probabilidades[
+                indice
+            ]
+        )
+
+
+        return jsonify({
+
+            "ok":
+                True,
+
+            "prediccion":
+                palabra,
+
+            "confianza":
+                valor_confianza
+
+        })
+
+
+    except Exception as error:
+
+        print(
+            error
+        )
+
+
+        return jsonify({
+
+            "ok":
+                False,
+
+            "message":
+                str(error)
+
+        }), 500
 
 
 if __name__ == "__main__":
+
+    print("")
+    print(
+        "API LSM iniciada."
+    )
+
+    print(
+        "http://127.0.0.1:5001"
+    )
+
+    print("")
+
+
     app.run(
-        host=os.getenv("IA_HOST", "127.0.0.1"),
-        port=int(os.getenv("IA_PORT", "5001")),
+
+        host="127.0.0.1",
+
+        port=5001,
+
         debug=True
+
     )

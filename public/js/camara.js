@@ -1,253 +1,1387 @@
-const video = document.getElementById('video');
-const canvas = document.getElementById('canvas');
-const ctx = canvas.getContext('2d');
+// =======================================================
+// ELEMENTOS HTML
+// =======================================================
 
-let ultimosLandmarks = null;
+const video =
+    document.getElementById("video");
+
+const canvas =
+    document.getElementById("canvas");
+
+const ctx =
+    canvas.getContext("2d");
+
+const prediccion =
+    document.getElementById("prediccion");
+
+const confianza =
+    document.getElementById("confianza");
+
+const frase =
+    document.getElementById("frase");
+
+const estadoReconocimiento =
+    document.getElementById(
+        "estadoReconocimiento"
+    );
+
+const estadoCamara =
+    document.getElementById(
+        "estadoCamara"
+    );
+
+const idPalabra =
+    document.getElementById(
+        "idPalabra"
+    );
+
+const barra =
+    document.getElementById(
+        "barra"
+    );
+
+const estadoCaptura =
+    document.getElementById(
+        "estadoCaptura"
+    );
+
+const btnCapturar =
+    document.getElementById(
+        "btnCapturar"
+    );
+
+
+// =======================================================
+// VARIABLES
+// =======================================================
+
+let stream = null;
+
+let hands = null;
+
 let reconocimientoActivo = false;
-let enviando = false;
 
-let ultimaClase = '';
-let repeticiones = 0;
-let ultimaAgregada = '';
-let ultimoAgregado = 0;
-let ultimaConfianza = 0;
+let procesandoFrame = false;
 
-const CONFIANZA_MINIMA = 0.80;
-const REPETICIONES_MINIMAS = 4;
-const COOLDOWN_MS = 1400;
+let esperandoIA = false;
 
-function vector63(landmarks) {
-    const salida = [];
-    for (const p of landmarks) {
-        salida.push(Number(p.x), Number(p.y), Number(p.z));
-    }
-    return salida;
-}
+let capturando = false;
 
-const hands = new Hands({
-    locateFile: file => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
-});
+let muestras = [];
 
-hands.setOptions({
-    maxNumHands: 1,
-    modelComplexity: 1,
-    minDetectionConfidence: 0.65,
-    minTrackingConfidence: 0.65
-});
+let ultimoMuestreo = 0;
 
-hands.onResults(results => {
-    canvas.width = video.videoWidth || 640;
-    canvas.height = video.videoHeight || 480;
 
-    ctx.save();
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+// Predicciones
 
-    if (results.multiHandLandmarks && results.multiHandLandmarks.length) {
-        const puntos = results.multiHandLandmarks[0];
-        ultimosLandmarks = vector63(puntos);
+let prediccionAnterior = "";
 
-        drawConnectors(ctx, puntos, HAND_CONNECTIONS, {lineWidth: 4});
-        drawLandmarks(ctx, puntos, {lineWidth: 2, radius: 3});
-    } else {
-        ultimosLandmarks = null;
-        document.getElementById('prediccion').textContent = 'Esperando mano...';
-        document.getElementById('confianza').textContent = 'Confianza: 0%';
-    }
+let repeticionesPrediccion = 0;
 
-    ctx.restore();
-});
+let ultimaSeñaAgregada = "";
 
-const camera = new Camera(video, {
-    onFrame: async () => {
-        await hands.send({image: video});
-    },
-    width: 640,
-    height: 480
-});
+let bloqueoSeña = false;
 
-camera.start().catch(err => {
-    document.getElementById('estadoReconocimiento').textContent =
-        'No se pudo abrir la cámara: ' + err.message;
-});
+let sinManoDesde = null;
 
-function activarReconocimiento() {
-    reconocimientoActivo = true;
-    document.getElementById('estadoReconocimiento').textContent =
-        'Reconocimiento activo.';
-}
 
-function detenerReconocimiento() {
-    reconocimientoActivo = false;
-    document.getElementById('estadoReconocimiento').textContent =
-        'Reconocimiento detenido.';
-}
+// Configuración
 
-async function predecir() {
-    if (!reconocimientoActivo || !ultimosLandmarks || enviando) return;
+const TOTAL_MUESTRAS = 100;
 
-    enviando = true;
+const INTERVALO_MUESTRA = 100;
 
-    try {
-        const r = await fetch(window.LSM_CONFIG.iaUrl + '/predict', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({landmarks: ultimosLandmarks})
-        });
+const CONFIANZA_MINIMA = 0.75;
 
-        const data = await r.json();
+const REPETICIONES_NECESARIAS = 3;
 
-        if (!r.ok || !data.ok) {
-            throw new Error(data.error || 'Error en la IA');
-        }
 
-        const palabra = data.palabra || '';
-        const confianza = Number(data.confianza || 0);
-        ultimaConfianza = confianza;
+// =======================================================
+// INICIALIZAR MEDIAPIPE
+// =======================================================
 
-        document.getElementById('prediccion').textContent = palabra || 'Sin predicción';
-        document.getElementById('confianza').textContent =
-            'Confianza: ' + (confianza * 100).toFixed(1) + '%';
+function inicializarMediaPipe() {
 
-        if (!palabra || confianza < CONFIANZA_MINIMA) {
-            ultimaClase = '';
-            repeticiones = 0;
-            return;
-        }
+    if (hands) {
 
-        if (palabra === ultimaClase) {
-            repeticiones++;
-        } else {
-            ultimaClase = palabra;
-            repeticiones = 1;
-        }
-
-        const ahora = Date.now();
-
-        if (
-            repeticiones >= REPETICIONES_MINIMAS &&
-            (palabra !== ultimaAgregada || ahora - ultimoAgregado > COOLDOWN_MS)
-        ) {
-            agregarPalabra(palabra);
-            ultimaAgregada = palabra;
-            ultimoAgregado = ahora;
-            repeticiones = 0;
-        }
-
-    } catch (e) {
-        document.getElementById('estadoReconocimiento').textContent =
-            'Error IA: ' + e.message + '. Verifica que python api.py esté ejecutándose.';
-    } finally {
-        enviando = false;
-    }
-}
-
-setInterval(predecir, 300);
-
-function agregarPalabra(palabra) {
-    const frase = document.getElementById('frase');
-    const actual = frase.value.trim();
-    frase.value = actual ? actual + ' ' + palabra : palabra;
-}
-
-function limpiarFrase() {
-    document.getElementById('frase').value = '';
-    ultimaClase = '';
-    ultimaAgregada = '';
-    repeticiones = 0;
-}
-
-async function guardarFrase() {
-    const texto = document.getElementById('frase').value.trim();
-
-    if (!texto) {
-        alert('No hay frase para guardar.');
         return;
+
     }
 
-    const r = await fetch(window.LSM_CONFIG.guardarTraduccionUrl, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': window.LSM_CONFIG.csrf,
-            'Accept': 'application/json'
-        },
-        body: JSON.stringify({
-            texto,
-            confianza: ultimaConfianza
-        })
+
+    hands = new Hands({
+
+        locateFile: function(file) {
+
+            return (
+                "https://cdn.jsdelivr.net/npm/" +
+                "@mediapipe/hands/" +
+                file
+            );
+
+        }
+
     });
 
-    const data = await r.json();
 
-    if (!r.ok || !data.ok) {
-        alert(data.message || 'No se pudo guardar.');
-        return;
-    }
+    hands.setOptions({
 
-    alert('Traducción guardada.');
+        maxNumHands: 1,
+
+        modelComplexity: 1,
+
+        minDetectionConfidence:
+            0.65,
+
+        minTrackingConfidence:
+            0.65
+
+    });
+
+
+    hands.onResults(
+        procesarResultadosMediaPipe
+    );
+
 }
 
-async function capturarLote() {
-    const idPalabra = document.getElementById('idPalabra').value;
 
-    if (!idPalabra) {
-        alert('Selecciona una palabra.');
-        return;
+// =======================================================
+// ENCENDER CÁMARA
+// =======================================================
+
+async function iniciarCamara() {
+
+    if (stream) {
+
+        return true;
+
     }
 
-    const boton = document.getElementById('btnCapturar');
-    const estado = document.getElementById('estadoCaptura');
-    const barra = document.getElementById('barra');
-
-    boton.disabled = true;
-
-    const muestras = [];
-    const OBJETIVO = 100;
-
-    estado.textContent = 'Prepárate...';
-    await dormir(1000);
-
-    while (muestras.length < OBJETIVO) {
-        if (ultimosLandmarks) {
-            muestras.push([...ultimosLandmarks]);
-            const pct = muestras.length / OBJETIVO * 100;
-            barra.style.width = pct + '%';
-            estado.textContent = muestras.length + ' / ' + OBJETIVO;
-        }
-
-        await dormir(90);
-    }
 
     try {
-        estado.textContent = 'Guardando...';
 
-        const r = await fetch(window.LSM_CONFIG.guardarMuestrasUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': window.LSM_CONFIG.csrf,
-                'Accept': 'application/json'
-            },
-            body: JSON.stringify({
-                id_palabra: Number(idPalabra),
-                muestras
-            })
-        });
+        estadoCamara.innerHTML =
+            "⏳ Solicitando permiso de cámara...";
 
-        const data = await r.json();
 
-        if (!r.ok || !data.ok) {
-            throw new Error(data.message || 'No se pudieron guardar las muestras.');
+        stream =
+            await navigator
+                .mediaDevices
+                .getUserMedia({
+
+                    video: {
+
+                        width: {
+                            ideal: 1280
+                        },
+
+                        height: {
+                            ideal: 720
+                        },
+
+                        facingMode:
+                            "user"
+
+                    },
+
+                    audio: false
+
+                });
+
+
+        video.srcObject =
+            stream;
+
+
+        await video.play();
+
+
+        canvas.width =
+            video.videoWidth || 640;
+
+
+        canvas.height =
+            video.videoHeight || 480;
+
+
+        estadoCamara.innerHTML =
+            "✅ Cámara encendida";
+
+
+        return true;
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "Error cámara:",
+            error
+        );
+
+
+        stream = null;
+
+
+        if (
+            error.name ===
+            "NotAllowedError"
+        ) {
+
+            estadoCamara.innerHTML =
+                "❌ Debes permitir el acceso a la cámara.";
+
         }
 
-        estado.textContent = '✅ ' + data.guardadas + ' muestras guardadas.';
-    } catch (e) {
-        estado.textContent = '❌ ' + e.message;
-    } finally {
-        boton.disabled = false;
+        else if (
+            error.name ===
+            "NotFoundError"
+        ) {
+
+            estadoCamara.innerHTML =
+                "❌ No se encontró ninguna cámara.";
+
+        }
+
+        else {
+
+            estadoCamara.innerHTML =
+                "❌ No se pudo iniciar la cámara.";
+
+        }
+
+
+        return false;
+
     }
+
 }
 
-function dormir(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
+
+// =======================================================
+// ACTIVAR RECONOCIMIENTO
+// =======================================================
+
+async function activarReconocimiento() {
+
+    inicializarMediaPipe();
+
+
+    const camaraLista =
+        await iniciarCamara();
+
+
+    if (!camaraLista) {
+
+        return;
+
+    }
+
+
+    reconocimientoActivo =
+        true;
+
+
+    estadoReconocimiento.innerHTML =
+        "🟢 Reconocimiento activo";
+
+
+    procesarFrame();
+
 }
+
+
+// =======================================================
+// PROCESAR VIDEO
+// =======================================================
+
+async function procesarFrame() {
+
+    if (!reconocimientoActivo) {
+
+        return;
+
+    }
+
+
+    if (
+        video.readyState >= 2 &&
+        !procesandoFrame
+    ) {
+
+        procesandoFrame =
+            true;
+
+
+        try {
+
+            await hands.send({
+
+                image: video
+
+            });
+
+        }
+
+        catch (error) {
+
+            console.error(
+                error
+            );
+
+        }
+
+        finally {
+
+            procesandoFrame =
+                false;
+
+        }
+
+    }
+
+
+    requestAnimationFrame(
+        procesarFrame
+    );
+
+}
+
+
+// =======================================================
+// RESULTADOS DE MEDIAPIPE
+// =======================================================
+
+function procesarResultadosMediaPipe(
+    results
+) {
+
+    ctx.clearRect(
+
+        0,
+
+        0,
+
+        canvas.width,
+
+        canvas.height
+
+    );
+
+
+    if (
+        !results.multiHandLandmarks ||
+        results.multiHandLandmarks.length === 0
+    ) {
+
+        cuandoNoHayMano();
+
+        return;
+
+    }
+
+
+    sinManoDesde = null;
+
+
+    const landmarks =
+        results.multiHandLandmarks[0];
+
+
+    /*
+     * Dibujar conexiones.
+     */
+
+    drawConnectors(
+
+        ctx,
+
+        landmarks,
+
+        HAND_CONNECTIONS,
+
+        {
+
+            lineWidth: 4
+
+        }
+
+    );
+
+
+    /*
+     * Dibujar puntos.
+     */
+
+    drawLandmarks(
+
+        ctx,
+
+        landmarks,
+
+        {
+
+            lineWidth: 2,
+
+            radius: 4
+
+        }
+
+    );
+
+
+    /*
+     * Convertir los 21 puntos
+     * a 63 números.
+     */
+
+    const puntos =
+        normalizarLandmarks(
+            landmarks
+        );
+
+
+    /*
+     * Si estamos entrenando.
+     */
+
+    procesarCaptura(
+        puntos
+    );
+
+
+    /*
+     * Si estamos reconociendo.
+     */
+
+    if (
+        reconocimientoActivo &&
+        !esperandoIA
+    ) {
+
+        enviarAIA(
+            puntos
+        );
+
+    }
+
+}
+
+
+// =======================================================
+// NORMALIZAR 21 PUNTOS
+// =======================================================
+
+function normalizarLandmarks(
+    landmarks
+) {
+
+    const base =
+        landmarks[0];
+
+
+    let puntosRelativos = [];
+
+
+    let escala = 0;
+
+
+    for (
+        let i = 0;
+        i < landmarks.length;
+        i++
+    ) {
+
+        const dx =
+            landmarks[i].x -
+            base.x;
+
+
+        const dy =
+            landmarks[i].y -
+            base.y;
+
+
+        const dz =
+            landmarks[i].z -
+            base.z;
+
+
+        const distancia =
+            Math.sqrt(
+
+                dx * dx +
+
+                dy * dy +
+
+                dz * dz
+
+            );
+
+
+        if (
+            distancia > escala
+        ) {
+
+            escala =
+                distancia;
+
+        }
+
+
+        puntosRelativos.push({
+
+            x: dx,
+
+            y: dy,
+
+            z: dz
+
+        });
+
+    }
+
+
+    if (escala === 0) {
+
+        escala = 1;
+
+    }
+
+
+    let salida = [];
+
+
+    puntosRelativos.forEach(
+
+        function(punto) {
+
+            salida.push(
+                punto.x / escala
+            );
+
+            salida.push(
+                punto.y / escala
+            );
+
+            salida.push(
+                punto.z / escala
+            );
+
+        }
+
+    );
+
+
+    return salida;
+
+}
+
+
+// =======================================================
+// NO HAY MANO
+// =======================================================
+
+function cuandoNoHayMano() {
+
+    prediccion.innerHTML =
+        "Esperando mano...";
+
+
+    confianza.innerHTML =
+        "Confianza: 0%";
+
+
+    if (!sinManoDesde) {
+
+        sinManoDesde =
+            Date.now();
+
+    }
+
+
+    if (
+        Date.now() -
+        sinManoDesde >
+        600
+    ) {
+
+        bloqueoSeña =
+            false;
+
+
+        prediccionAnterior =
+            "";
+
+
+        repeticionesPrediccion =
+            0;
+
+    }
+
+}
+
+
+// =======================================================
+// ENVIAR A PYTHON
+// =======================================================
+
+async function enviarAIA(
+    puntos
+) {
+
+    esperandoIA =
+        true;
+
+
+    try {
+
+        const respuesta =
+            await fetch(
+
+                window
+                    .LSM_CONFIG
+                    .iaUrl
+                +
+                "/predecir",
+
+                {
+
+                    method:
+                        "POST",
+
+                    headers: {
+
+                        "Content-Type":
+                            "application/json"
+
+                    },
+
+                    body:
+                        JSON.stringify({
+
+                            puntos:
+                                puntos
+
+                        })
+
+                }
+
+            );
+
+
+        const data =
+            await respuesta.json();
+
+
+        if (
+            !respuesta.ok ||
+            !data.ok
+        ) {
+
+            throw new Error(
+
+                data.message ||
+                "La IA todavía no está disponible."
+
+            );
+
+        }
+
+
+        const porcentaje =
+            Math.round(
+
+                data.confianza
+                *
+                100
+
+            );
+
+
+        prediccion.innerHTML =
+            data.prediccion;
+
+
+        confianza.innerHTML =
+            "Confianza: "
+            +
+            porcentaje
+            +
+            "%";
+
+
+        evaluarPrediccion(
+
+            data.prediccion,
+
+            data.confianza
+
+        );
+
+    }
+
+    catch (error) {
+
+        prediccion.innerHTML =
+            "IA desconectada";
+
+
+        confianza.innerHTML =
+            "Ejecuta: py api.py";
+
+
+        console.error(
+            error
+        );
+
+    }
+
+    finally {
+
+        setTimeout(
+
+            function() {
+
+                esperandoIA =
+                    false;
+
+            },
+
+            250
+
+        );
+
+    }
+
+}
+
+
+// =======================================================
+// EVALUAR PREDICCIÓN
+// =======================================================
+
+function evaluarPrediccion(
+    palabra,
+    valorConfianza
+) {
+
+    if (
+        valorConfianza <
+        CONFIANZA_MINIMA
+    ) {
+
+        prediccionAnterior =
+            "";
+
+
+        repeticionesPrediccion =
+            0;
+
+
+        return;
+
+    }
+
+
+    if (
+        palabra ===
+        prediccionAnterior
+    ) {
+
+        repeticionesPrediccion++;
+
+    }
+
+    else {
+
+        prediccionAnterior =
+            palabra;
+
+
+        repeticionesPrediccion =
+            1;
+
+    }
+
+
+    if (
+        repeticionesPrediccion <
+        REPETICIONES_NECESARIAS
+    ) {
+
+        return;
+
+    }
+
+
+    if (
+        bloqueoSeña &&
+        palabra ===
+        ultimaSeñaAgregada
+    ) {
+
+        return;
+
+    }
+
+
+    agregarPalabraAFrase(
+        palabra
+    );
+
+
+    ultimaSeñaAgregada =
+        palabra;
+
+
+    bloqueoSeña =
+        true;
+
+
+    repeticionesPrediccion =
+        0;
+
+}
+
+
+// =======================================================
+// AGREGAR PALABRA AL TEXTAREA
+// =======================================================
+
+function agregarPalabraAFrase(
+    palabra
+) {
+
+    const textoActual =
+        frase.value.trim();
+
+
+    if (
+        textoActual === ""
+    ) {
+
+        frase.value =
+            palabra;
+
+    }
+
+    else {
+
+        frase.value =
+            textoActual
+            +
+            " "
+            +
+            palabra;
+
+    }
+
+
+    estadoReconocimiento.innerHTML =
+        "✅ Seña detectada: "
+        +
+        palabra;
+
+}
+
+
+// =======================================================
+// DETENER
+// =======================================================
+
+function detenerReconocimiento() {
+
+    reconocimientoActivo =
+        false;
+
+
+    capturando =
+        false;
+
+
+    if (stream) {
+
+        stream
+            .getTracks()
+            .forEach(
+
+                function(track) {
+
+                    track.stop();
+
+                }
+
+            );
+
+
+        stream =
+            null;
+
+
+        video.srcObject =
+            null;
+
+    }
+
+
+    ctx.clearRect(
+
+        0,
+
+        0,
+
+        canvas.width,
+
+        canvas.height
+
+    );
+
+
+    prediccion.innerHTML =
+        "Esperando mano...";
+
+
+    confianza.innerHTML =
+        "Confianza: 0%";
+
+
+    estadoCamara.innerHTML =
+        "🔴 Cámara apagada";
+
+
+    estadoReconocimiento.innerHTML =
+        "Reconocimiento detenido.";
+
+}
+
+
+// =======================================================
+// CAPTURAR 100 MUESTRAS
+// =======================================================
+
+async function capturarLote() {
+
+    if (
+        idPalabra.value === ""
+    ) {
+
+        alert(
+            "Selecciona primero una palabra o letra."
+        );
+
+        return;
+
+    }
+
+
+    await activarReconocimiento();
+
+
+    if (!stream) {
+
+        return;
+
+    }
+
+
+    muestras = [];
+
+
+    capturando =
+        true;
+
+
+    ultimoMuestreo =
+        0;
+
+
+    barra.style.width =
+        "0%";
+
+
+    estadoCaptura.innerHTML =
+        "0 / "
+        +
+        TOTAL_MUESTRAS;
+
+
+    btnCapturar.disabled =
+        true;
+
+
+    btnCapturar.innerHTML =
+        "📸 Capturando...";
+
+
+    estadoReconocimiento.innerHTML =
+        "✋ Mantén la seña frente a la cámara.";
+
+}
+
+
+// =======================================================
+// PROCESAR MUESTRAS
+// =======================================================
+
+function procesarCaptura(
+    puntos
+) {
+
+    if (!capturando) {
+
+        return;
+
+    }
+
+
+    const ahora =
+        Date.now();
+
+
+    if (
+        ahora -
+        ultimoMuestreo <
+        INTERVALO_MUESTRA
+    ) {
+
+        return;
+
+    }
+
+
+    ultimoMuestreo =
+        ahora;
+
+
+    muestras.push(
+        [...puntos]
+    );
+
+
+    const cantidad =
+        muestras.length;
+
+
+    const porcentaje =
+        (
+            cantidad /
+            TOTAL_MUESTRAS
+        )
+        *
+        100;
+
+
+    barra.style.width =
+        porcentaje
+        +
+        "%";
+
+
+    estadoCaptura.innerHTML =
+        cantidad
+        +
+        " / "
+        +
+        TOTAL_MUESTRAS;
+
+
+    if (
+        cantidad >=
+        TOTAL_MUESTRAS
+    ) {
+
+        capturando =
+            false;
+
+
+        guardarMuestras();
+
+    }
+
+}
+
+
+// =======================================================
+// GUARDAR MUESTRAS EN LARAVEL
+// =======================================================
+
+async function guardarMuestras() {
+
+    estadoCaptura.innerHTML =
+        "Guardando...";
+
+
+    try {
+
+        const respuesta =
+            await fetch(
+
+                window
+                    .LSM_CONFIG
+                    .guardarMuestrasUrl,
+
+                {
+
+                    method:
+                        "POST",
+
+                    headers: {
+
+                        "Content-Type":
+                            "application/json",
+
+                        "X-CSRF-TOKEN":
+                            window
+                                .LSM_CONFIG
+                                .csrf,
+
+                        "Accept":
+                            "application/json"
+
+                    },
+
+                    body:
+                        JSON.stringify({
+
+                            id_palabra:
+                                idPalabra.value,
+
+                            muestras:
+                                muestras
+
+                        })
+
+                }
+
+            );
+
+
+        const data =
+            await respuesta.json();
+
+
+        if (!respuesta.ok) {
+
+            throw new Error(
+
+                data.message ||
+                "No se pudieron guardar las muestras."
+
+            );
+
+        }
+
+
+        barra.style.width =
+            "100%";
+
+
+        estadoCaptura.innerHTML =
+            "✅ 100 / 100 guardadas";
+
+
+        estadoReconocimiento.innerHTML =
+            "✅ Muestras guardadas para "
+            +
+            data.palabra;
+
+    }
+
+    catch (error) {
+
+        console.error(
+            error
+        );
+
+
+        estadoCaptura.innerHTML =
+            "❌ Error";
+
+
+        estadoReconocimiento.innerHTML =
+            "❌ "
+            +
+            error.message;
+
+    }
+
+    finally {
+
+        btnCapturar.disabled =
+            false;
+
+
+        btnCapturar.innerHTML =
+            "📸 Capturar 100 muestras";
+
+    }
+
+}
+
+
+// =======================================================
+// GUARDAR FRASE
+// =======================================================
+
+async function guardarFrase() {
+
+    const texto =
+        frase.value.trim();
+
+
+    if (
+        texto === ""
+    ) {
+
+        alert(
+            "No existe ninguna frase para guardar."
+        );
+
+        return;
+
+    }
+
+
+    try {
+
+        const respuesta =
+            await fetch(
+
+                window
+                    .LSM_CONFIG
+                    .guardarTraduccionUrl,
+
+                {
+
+                    method:
+                        "POST",
+
+                    headers: {
+
+                        "Content-Type":
+                            "application/json",
+
+                        "X-CSRF-TOKEN":
+                            window
+                                .LSM_CONFIG
+                                .csrf,
+
+                        "Accept":
+                            "application/json"
+
+                    },
+
+                    body:
+                        JSON.stringify({
+
+                            frase:
+                                texto
+
+                        })
+
+                }
+
+            );
+
+
+        const data =
+            await respuesta.json();
+
+
+        if (!respuesta.ok) {
+
+            throw new Error(
+
+                data.message ||
+                "No se pudo guardar."
+
+            );
+
+        }
+
+
+        estadoReconocimiento.innerHTML =
+            "💾 Frase guardada en el historial.";
+
+    }
+
+    catch (error) {
+
+        console.error(
+            error
+        );
+
+
+        estadoReconocimiento.innerHTML =
+            "❌ "
+            +
+            error.message;
+
+    }
+
+}
+
+
+// =======================================================
+// LIMPIAR FRASE
+// =======================================================
+
+function limpiarFrase() {
+
+    frase.value =
+        "";
+
+
+    prediccionAnterior =
+        "";
+
+
+    ultimaSeñaAgregada =
+        "";
+
+
+    repeticionesPrediccion =
+        0;
+
+
+    bloqueoSeña =
+        false;
+
+
+    estadoReconocimiento.innerHTML =
+        "Frase limpiada.";
+
+}
+
+
+// =======================================================
+// CERRAR CÁMARA
+// =======================================================
+
+window.addEventListener(
+
+    "beforeunload",
+
+    function() {
+
+        if (stream) {
+
+            stream
+                .getTracks()
+                .forEach(
+
+                    function(track) {
+
+                        track.stop();
+
+                    }
+
+                );
+
+        }
+
+    }
+
+);

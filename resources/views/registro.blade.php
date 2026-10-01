@@ -6,7 +6,7 @@
     <title>Registro | LSM</title>
     <style>
         *{box-sizing:border-box;font-family:Arial,sans-serif}
-        body{margin:0;min-height:100vh;padding:30px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#00b4d8,#48cae4,#64dfdf,#72efdd,#80ffdb)}
+        body{margin:0;min-height:100vh;padding:30px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#fff,#fff,#fff,#fff,#fff)}
         .box{width:min(760px,96%);background:rgba(255,255,255,.5);padding:45px;border-radius:35px;box-shadow:0 20px 50px rgba(0,0,0,.15)}
         .logo{text-align:center;font-size:75px}
         h1{text-align:center}

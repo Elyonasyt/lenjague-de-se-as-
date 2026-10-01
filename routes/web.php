@@ -63,3 +63,21 @@ Route::get('/traducciones/delete/{id}', [AdminController::class, 'traduccionDele
 ========================= */
 Route::get('/bitacora', [BitacoraController::class, 'index'])->name('bitacora');
 Route::get('/logs', [BitacoraController::class, 'laravelLogs'])->name('logs');
+
+
+Route::get(
+    '/camara',
+    [CamaraController::class, 'index']
+)->name('camara');
+
+
+Route::post(
+    '/camara/muestras',
+    [CamaraController::class, 'guardarMuestras']
+)->name('camara.muestras');
+
+
+Route::post(
+    '/camara/guardar-traduccion',
+    [CamaraController::class, 'guardarTraduccion']
+)->name('camara.guardarTraduccion');

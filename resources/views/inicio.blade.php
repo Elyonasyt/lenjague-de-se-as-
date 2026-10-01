@@ -6,7 +6,7 @@
     <title>Iniciar sesión | LSM</title>
     <style>
         *{box-sizing:border-box;font-family:Arial,sans-serif}
-        body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#c8fff4,#9bf6ff,#72efdd,#56cfe1)}
+        body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#fff,#fff,#fff,#fff)}
         .box{width:min(620px,92%);background:rgba(255,255,255,.55);padding:50px;border-radius:35px;box-shadow:0 20px 50px rgba(0,0,0,.15)}
         .logo{text-align:center;font-size:80px}
         h1{text-align:center;color:#000}
@@ -23,6 +23,7 @@
 <body>
 <div class="box">
     <div class="logo">🤟</div>
+    <h1>Sistema inteigente para traducir lengua de señas<h1>
     <h1>Iniciar sesión</h1>
 
     @if(session('success'))
